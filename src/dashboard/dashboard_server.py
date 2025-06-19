@@ -572,38 +572,54 @@ th {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
     margin-top: 20px;
     padding: 15px 0;
+    flex-wrap: wrap;
 }
 
 .pagination button {
-    min-width: 100px;
+    min-width: 80px;
+    white-space: nowrap;
 }
 
 #page-numbers {
     display: flex;
-    gap: 5px;
+    gap: 3px;
     align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .page-number {
-    padding: 5px 10px;
+    padding: 6px 10px;
     border: 1px solid #ddd;
     background: white;
     cursor: pointer;
-    border-radius: 3px;
-    font-size: 0.9rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    min-width: 32px;
+    text-align: center;
+    transition: all 0.2s ease;
 }
 
 .page-number.active {
     background: #3498db;
     color: white;
     border-color: #3498db;
+    font-weight: 600;
 }
 
 .page-number:hover:not(.active) {
     background: #f8f9fa;
+    border-color: #3498db;
+}
+
+.page-ellipsis {
+    padding: 6px 4px;
+    color: #7f8c8d;
+    font-size: 0.85rem;
+    user-select: none;
 }
 
 @media (max-width: 768px) {
@@ -632,8 +648,28 @@ th {
     }
 
     .pagination {
-        flex-direction: column;
-        gap: 10px;
+        gap: 8px;
+    }
+
+    .pagination button {
+        min-width: 70px;
+        font-size: 0.8rem;
+        padding: 8px 12px;
+    }
+
+    #page-numbers {
+        gap: 2px;
+    }
+
+    .page-number {
+        padding: 5px 8px;
+        font-size: 0.8rem;
+        min-width: 28px;
+    }
+
+    .page-ellipsis {
+        padding: 5px 2px;
+        font-size: 0.8rem;
     }
 }
 '''
@@ -958,6 +994,9 @@ class Dashboard {
         document.getElementById('prev-page').disabled = !has_prev;
         document.getElementById('next-page').disabled = !has_next;
 
+        // Actualizar números de página
+        this.updatePageNumbers(page, total_pages);
+
         // Mostrar logs
         if (logs.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="loading">No se encontraron logs con los filtros aplicados</td></tr>';
@@ -1014,6 +1053,84 @@ class Dashboard {
         if (statusCode >= 400 && statusCode < 500) return 'status-400';
         if (statusCode >= 500) return 'status-500';
         return '';
+    }
+
+    updatePageNumbers(currentPage, totalPages) {
+        const pageNumbersContainer = document.getElementById('page-numbers');
+
+        if (totalPages <= 1) {
+            pageNumbersContainer.innerHTML = '';
+            return;
+        }
+
+        const pageNumbers = this.generatePageNumbers(currentPage, totalPages);
+
+        pageNumbersContainer.innerHTML = pageNumbers.map(item => {
+            if (item === '...') {
+                return '<span class="page-ellipsis">...</span>';
+            } else {
+                const isActive = item === currentPage ? 'active' : '';
+                return `<button class="page-number ${isActive}" data-page="${item}">${item}</button>`;
+            }
+        }).join('');
+
+        // Agregar event listeners a los números de página
+        pageNumbersContainer.querySelectorAll('.page-number').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page !== this.currentPage) {
+                    this.currentPage = page;
+                    this.loadHistoricalLogs();
+                }
+            });
+        });
+    }
+
+    generatePageNumbers(current, total) {
+        const pages = [];
+        const maxVisible = window.innerWidth < 768 ? 5 : 7; // Menos páginas en móvil
+
+        if (total <= maxVisible) {
+            // Si hay pocas páginas, mostrar todas
+            for (let i = 1; i <= total; i++) {
+                pages.push(i);
+            }
+        } else {
+            // Lógica inteligente para páginas
+            pages.push(1); // Siempre mostrar primera página
+
+            let start = Math.max(2, current - 1);
+            let end = Math.min(total - 1, current + 1);
+
+            // Ajustar rango si estamos cerca del inicio o final
+            if (current <= 3) {
+                end = Math.min(total - 1, 4);
+            } else if (current >= total - 2) {
+                start = Math.max(2, total - 3);
+            }
+
+            // Agregar puntos suspensivos si hay gap
+            if (start > 2) {
+                pages.push('...');
+            }
+
+            // Agregar páginas del rango
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+
+            // Agregar puntos suspensivos si hay gap al final
+            if (end < total - 1) {
+                pages.push('...');
+            }
+
+            // Siempre mostrar última página (si no es la primera)
+            if (total > 1) {
+                pages.push(total);
+            }
+        }
+
+        return pages;
     }
 }
 
