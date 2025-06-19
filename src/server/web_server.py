@@ -35,7 +35,7 @@ class TechWebServer:
         try:
             # Obtener el host del request
             host = request.headers.get('Host', 'localhost').split(':')[0]
-            
+
             # Buscar virtual host correspondiente
             vhost = config.get_virtual_host_by_domain(host)
             if not vhost:
@@ -45,6 +45,10 @@ class TechWebServer:
                     vhost = virtual_hosts[0]
                 else:
                     return web.Response(text="No virtual hosts configured", status=500)
+
+            # Verificar si necesita redirección HTTP → HTTPS
+            if self._should_redirect_to_https(request, vhost):
+                return self._create_https_redirect(request, vhost)
             
             # Obtener la ruta del archivo
             path = request.path.lstrip('/')
@@ -178,6 +182,43 @@ class TechWebServer:
             response = web.Response(text="Internal Server Error", status=500)
             self._log_request(request, 500, 'error', start_time, None)
             return response
+
+    def _should_redirect_to_https(self, request: web_request.Request, vhost: dict) -> bool:
+        """Determina si la petición HTTP debe ser redirigida a HTTPS"""
+        # Solo redirigir si:
+        # 1. El virtual host tiene SSL habilitado
+        # 2. El virtual host tiene redirección SSL habilitada
+        # 3. La petición actual es HTTP (no HTTPS)
+        return (
+            vhost.get('ssl_enabled', False) and
+            vhost.get('ssl_redirect', False) and
+            request.scheme == 'http'
+        )
+
+    def _create_https_redirect(self, request: web_request.Request, vhost: dict) -> web.Response:
+        """Crea una respuesta de redirección HTTP → HTTPS"""
+        # Obtener puerto HTTPS del .env
+        https_port = config.get('default_https_port', 3453)
+
+        # Construir URL HTTPS
+        host = request.headers.get('Host', vhost['domain']).split(':')[0]
+
+        # Si el puerto HTTPS es estándar (443), no incluirlo en la URL
+        if https_port == 443:
+            https_url = f"https://{host}{request.path_qs}"
+        else:
+            https_url = f"https://{host}:{https_port}{request.path_qs}"
+
+        # Crear respuesta de redirección 301 (permanente)
+        response = web.Response(
+            status=301,
+            headers={'Location': https_url}
+        )
+
+        # Registrar la redirección en logs
+        self._log_request(request, 301, 'ssl_redirect', asyncio.get_event_loop().time(), vhost)
+
+        return response
 
     def _log_request(self, request: web_request.Request, status_code: int,
                     request_type: str, start_time: float, vhost: dict = None):
