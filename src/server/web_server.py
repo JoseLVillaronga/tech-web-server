@@ -9,6 +9,7 @@ from typing import Optional
 from config.config_manager import config
 from php_fpm.php_manager import php_manager
 from dashboard.dashboard_server import DashboardServer
+from utils.geoip import geoip_manager
 
 class TechWebServer:
     """Servidor web principal con soporte para virtual hosts"""
@@ -94,7 +95,7 @@ class TechWebServer:
                         response.headers['Server'] = 'TechWebServer/1.0'
 
                     # Registrar estadísticas
-                    self._log_request(request, status, 'php', start_time)
+                    self._log_request(request, status, 'php', start_time, vhost)
 
                     return response
 
@@ -125,7 +126,7 @@ class TechWebServer:
                         response.headers['Server'] = 'TechWebServer/1.0'
 
                     # Registrar estadísticas
-                    self._log_request(request, 200, 'static', start_time)
+                    self._log_request(request, 200, 'static', start_time, vhost)
 
                     return response
 
@@ -135,23 +136,31 @@ class TechWebServer:
         except Exception as e:
             print(f"Error handling request: {e}")
             response = web.Response(text="Internal Server Error", status=500)
-            self._log_request(request, 500, 'error', start_time)
+            self._log_request(request, 500, 'error', start_time, None)
             return response
 
     def _log_request(self, request: web_request.Request, status_code: int,
-                    request_type: str, start_time: float):
+                    request_type: str, start_time: float, vhost: dict = None):
         """Registra estadísticas de la request"""
         try:
             ip = request.remote or '127.0.0.1'
             user_agent = request.headers.get('User-Agent', '')
             path = request.path
 
+            # Obtener código de país
+            country_code = geoip_manager.get_country_code(ip)
+
+            # Obtener dominio del virtual host
+            virtual_host_domain = vhost.get('domain', 'unknown') if vhost else 'unknown'
+
             self.dashboard.update_stats(
                 request_type=request_type,
                 status_code=status_code,
                 path=path,
                 user_agent=user_agent,
-                ip=ip
+                ip=ip,
+                country_code=country_code,
+                virtual_host=virtual_host_domain
             )
         except Exception as e:
             print(f"Error logging request: {e}")

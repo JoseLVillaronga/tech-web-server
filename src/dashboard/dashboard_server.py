@@ -127,8 +127,9 @@ class DashboardServer:
         
         return web.Response(text="Not Found", status=404)
     
-    def update_stats(self, request_type: str = 'static', status_code: int = 200, 
-                    path: str = '/', user_agent: str = '', ip: str = '127.0.0.1'):
+    def update_stats(self, request_type: str = 'static', status_code: int = 200,
+                    path: str = '/', user_agent: str = '', ip: str = '127.0.0.1',
+                    country_code: str = 'XX', virtual_host: str = 'unknown'):
         """Actualiza estadísticas del servidor"""
         self.stats['requests_total'] += 1
         
@@ -147,7 +148,9 @@ class DashboardServer:
             'status': status_code,
             'type': request_type,
             'ip': ip,
-            'user_agent': user_agent[:50] + '...' if len(user_agent) > 50 else user_agent
+            'user_agent': user_agent[:50] + '...' if len(user_agent) > 50 else user_agent,
+            'country_code': country_code,
+            'virtual_host': virtual_host
         }
         
         self.stats['last_requests'].insert(0, request_info)
@@ -544,7 +547,7 @@ class Dashboard {
         const tbody = document.querySelector('#recent-requests tbody');
 
         if (!requests || requests.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">No hay requests recientes</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">No hay requests recientes</td></tr>';
             return;
         }
 
@@ -559,6 +562,8 @@ class Dashboard {
                     <td class="${statusClass}">${req.status}</td>
                     <td>${req.type}</td>
                     <td>${req.ip}</td>
+                    <td>${req.country_code || 'XX'}</td>
+                    <td>${req.virtual_host || 'unknown'}</td>
                     <td>${req.user_agent}</td>
                 </tr>
             `;
@@ -647,11 +652,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <th>Status</th>
                                 <th>Tipo</th>
                                 <th>IP</th>
+                                <th>País</th>
+                                <th>Virtual Host</th>
                                 <th>User Agent</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="6" class="loading">Cargando...</td></tr>
+                            <tr><td colspan="8" class="loading">Cargando...</td></tr>
                         </tbody>
                     </table>
                 </div>
