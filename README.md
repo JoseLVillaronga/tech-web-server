@@ -48,20 +48,35 @@ Servidor web alternativo a Apache2 construido con Python y asyncio para alta con
 
 #### 5. Dashboard Web
 - [x] Interfaz web de administración
-- [x] Estadísticas en tiempo real
+- [x] Estadísticas en tiempo real (WebSocket)
 - [x] Visualización de logs recientes
 - [x] Estado de virtual hosts y PHP
 - [x] Métricas de rendimiento
 - [x] Distribución por países y tipos de request
 - [x] Dashboard accesible remotamente (puerto 8000)
+- [x] Logs históricos con filtros avanzados
+- [x] Paginación inteligente con números de página
+- [x] Filtros por fecha, IP, virtual host, status code
+- [x] Búsqueda de texto en logs
+- [x] Navegación directa por números de página
+- [x] Diseño responsive adaptativo
+
+#### 6. SSL/HTTPS
+- [x] Certificados SSL auto-firmados
+- [x] Soporte HTTPS con SNI (Server Name Indication)
+- [x] Configuración SSL por virtual host
+- [x] Redirección automática HTTP → HTTPS
+- [x] Gestión de certificados SSL
+- [ ] Integración Let's Encrypt para producción
 
 ### 🔄 En Desarrollo
 
-#### 6. Funcionalidades Avanzadas
+#### 7. Funcionalidades Avanzadas
 - [x] Compresión gzip/brotli
-- [ ] Soporte SSL/TLS
 - [ ] Rate limiting
-- [ ] Headers de seguridad
+- [ ] Headers de seguridad avanzados
+- [ ] Proxy reverso básico
+- [ ] WebSocket support
 
 ## 🎯 Estado Actual del Sistema
 
@@ -72,7 +87,8 @@ El servidor web está **100% operativo** con todas las funcionalidades principal
 - **🚀 Servidor Web**: Asyncio de alta concurrencia (hasta 300 conexiones)
 - **🐘 PHP-FPM**: Soporte completo para múltiples versiones (7.1, 7.4, 8.2, 8.3, 8.4)
 - **🌐 Virtual Hosts**: Configuración independiente por dominio
-- **📊 Dashboard**: Interfaz web con estadísticas en tiempo real
+- **🔐 SSL/HTTPS**: Certificados auto-firmados con redirección automática
+- **📊 Dashboard**: Interfaz web con estadísticas y paginación inteligente
 - **📝 Logging**: Sistema dual (memoria + MongoDB) con geolocalización
 - **🗄️ MongoDB**: Base de datos persistente con índices optimizados
 - **🗜️ Compresión**: Gzip/Brotli habilitado
@@ -80,11 +96,23 @@ El servidor web está **100% operativo** con todas las funcionalidades principal
 
 ### 🌟 **Características Destacadas**
 
+- **SSL/HTTPS Completo**: Certificados auto-firmados con redirección automática
+- **Dashboard Avanzado**: Paginación inteligente con números de página
 - **Logging Inteligente**: Detecta geolocalización (LOCAL/remota) y guarda en MongoDB
 - **Dashboard Remoto**: Accesible desde cualquier IP en puerto 8000
 - **PHP Flexible**: Cada virtual host puede usar diferente versión de PHP
 - **Estadísticas Avanzadas**: Distribución por países, tipos de request, códigos de estado
+- **Filtros Históricos**: Búsqueda avanzada en logs con múltiples criterios
 - **Índices Optimizados**: Consultas rápidas en MongoDB para análisis histórico
+
+### 📊 **Dashboard Features**
+
+- **🎯 Paginación Inteligente**: Números de página adaptativos con lógica inteligente
+- **🔍 Filtros Avanzados**: Por fecha, IP, virtual host, status code, método HTTP
+- **📱 Responsive Design**: Se adapta perfectamente a móviles y tablets
+- **⚡ Tiempo Real**: WebSocket para estadísticas en vivo
+- **📈 Métricas Visuales**: Gráficos y estadísticas de rendimiento
+- **🌍 Geolocalización**: Distribución de requests por países
 
 ## 🛠️ Instalación y Uso
 
@@ -163,15 +191,17 @@ virtual_hosts:
   - domain: "localhost"
     port: 3080
     document_root: "./public"
-    ssl_enabled: false
+    ssl_enabled: true
+    ssl_redirect: true
     php_enabled: true
     php_version: "8.3"
     php_pool: "www"
-  
+
   - domain: "test.local"
     port: 3080
     document_root: "./public/test"
-    ssl_enabled: false
+    ssl_enabled: true
+    ssl_redirect: true
     php_enabled: true
     php_version: "7.4"
     php_pool: "www"
@@ -196,6 +226,18 @@ curl -H "Host: localhost" http://localhost:3080/info.php
 
 # test.local con PHP 7.4
 curl -H "Host: test.local" http://localhost:3080/version.php
+```
+
+### SSL/HTTPS
+```bash
+# Probar redirección HTTP → HTTPS
+curl -v -H "Host: localhost" http://localhost:3080/
+
+# Acceso directo HTTPS (certificado auto-firmado)
+curl -k -H "Host: localhost" https://localhost:3453/
+
+# Verificar certificado SSL
+openssl s_client -connect localhost:3453 -servername localhost
 ```
 
 ### Dashboard y Logging
@@ -244,10 +286,15 @@ tech-web-server/
 │   │   ├── __init__.py
 │   │   ├── dashboard_server.py    # Servidor dashboard
 │   │   └── static/                # Archivos estáticos dashboard
-│   ├── ssl/                       # (próximo)
+│   ├── tls/
+│   │   ├── __init__.py
+│   │   └── ssl_manager.py         # Gestión de certificados SSL
 │   └── utils/                     # (próximo)
 ├── config/
 │   └── virtual_hosts.yaml         # Configuración virtual hosts
+├── ssl/
+│   ├── certs/                     # Certificados SSL
+│   └── generate_certificates.sh   # Script generación certificados
 ├── public/
 │   ├── index.html                 # Página principal
 │   ├── info.php                   # Info PHP localhost
@@ -270,10 +317,10 @@ tech-web-server/
 4. **Métricas avanzadas**
 
 ### Commits importantes
-- `63027a3` - Implementación básica del servidor web
-- `f412383` - Integración PHP-FPM completa
-- `[ACTUAL]` - Sistema de logging completo con MongoDB
-- `[ACTUAL]` - Dashboard web funcional con estadísticas en tiempo real
+- `0a69190` - Plataforma web completa con dashboard y logging
+- `20a8ddc` - Soporte SSL/HTTPS completo con certificados
+- `3bbb6bc` - Redirección automática HTTP → HTTPS
+- `dc94aa0` - Paginación inteligente del dashboard
 
 ## 📚 Documentación Completa
 
