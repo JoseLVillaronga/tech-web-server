@@ -8,12 +8,14 @@ from typing import Optional
 
 from config.config_manager import config
 from php_fpm.php_manager import php_manager
+from dashboard.dashboard_server import DashboardServer
 
 class TechWebServer:
     """Servidor web principal con soporte para virtual hosts"""
-    
+
     def __init__(self):
         self.app = web.Application()
+        self.dashboard = DashboardServer()
         self.setup_routes()
         
     def setup_routes(self):
@@ -23,6 +25,8 @@ class TechWebServer:
     
     async def handle_request(self, request: web_request.Request) -> web.Response:
         """Maneja todas las peticiones HTTP"""
+        start_time = asyncio.get_event_loop().time()
+
         try:
             # Obtener el host del request
             host = request.headers.get('Host', 'localhost').split(':')[0]
@@ -89,6 +93,9 @@ class TechWebServer:
                     if not config.get('hide_server_header', True):
                         response.headers['Server'] = 'TechWebServer/1.0'
 
+                    # Registrar estadísticas
+                    self._log_request(request, status, 'php', start_time)
+
                     return response
 
                 except Exception as e:
@@ -117,6 +124,9 @@ class TechWebServer:
                     if not config.get('hide_server_header', True):
                         response.headers['Server'] = 'TechWebServer/1.0'
 
+                    # Registrar estadísticas
+                    self._log_request(request, 200, 'static', start_time)
+
                     return response
 
                 except IOError:
@@ -124,8 +134,28 @@ class TechWebServer:
             
         except Exception as e:
             print(f"Error handling request: {e}")
-            return web.Response(text="Internal Server Error", status=500)
-    
+            response = web.Response(text="Internal Server Error", status=500)
+            self._log_request(request, 500, 'error', start_time)
+            return response
+
+    def _log_request(self, request: web_request.Request, status_code: int,
+                    request_type: str, start_time: float):
+        """Registra estadísticas de la request"""
+        try:
+            ip = request.remote or '127.0.0.1'
+            user_agent = request.headers.get('User-Agent', '')
+            path = request.path
+
+            self.dashboard.update_stats(
+                request_type=request_type,
+                status_code=status_code,
+                path=path,
+                user_agent=user_agent,
+                ip=ip
+            )
+        except Exception as e:
+            print(f"Error logging request: {e}")
+
     async def start_server(self):
         """Inicia el servidor web"""
         http_port = config.get('default_http_port', 3080)
@@ -160,14 +190,30 @@ class TechWebServer:
         
         await site.start()
         print(f"✅ Servidor iniciado en http://localhost:{http_port}")
-        
-        return runner
+
+        # Iniciar dashboard
+        dashboard_port = config.get('dashboard_port', 8000)
+        dashboard_bind_ip = config.get('dashboard_bind_ip', '0.0.0.0')
+
+        dashboard_runner = web.AppRunner(self.dashboard.app)
+        await dashboard_runner.setup()
+
+        dashboard_site = web.TCPSite(
+            dashboard_runner,
+            dashboard_bind_ip,
+            dashboard_port
+        )
+
+        await dashboard_site.start()
+        print(f"📊 Dashboard iniciado en http://{dashboard_bind_ip}:{dashboard_port}")
+
+        return runner, dashboard_runner
 
 async def main():
     """Función principal para ejecutar el servidor"""
     server = TechWebServer()
-    runner = await server.start_server()
-    
+    runner, dashboard_runner = await server.start_server()
+
     try:
         # Mantener el servidor corriendo
         while True:
@@ -176,6 +222,7 @@ async def main():
         print("\n🛑 Deteniendo servidor...")
     finally:
         await runner.cleanup()
+        await dashboard_runner.cleanup()
         print("✅ Servidor detenido")
 
 if __name__ == '__main__':
