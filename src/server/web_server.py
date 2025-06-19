@@ -1,17 +1,19 @@
 import asyncio
 import os
 import time
+import ssl
 from aiohttp import web, web_request
 from aiofiles import open as aio_open
 import mimetypes
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Tuple
 
 from config.config_manager import config
 from php_fpm.php_manager import php_manager
 from dashboard.dashboard_server import DashboardServer
 from utils.geoip import geoip_manager
 from database.mongodb_client import mongodb_client
+from tls.ssl_manager import ssl_manager
 
 class TechWebServer:
     """Servidor web principal con soporte para virtual hosts"""
@@ -240,16 +242,18 @@ class TechWebServer:
             print(f"Error logging to MongoDB: {e}")
 
     async def start_server(self):
-        """Inicia el servidor web"""
+        """Inicia el servidor web con soporte HTTP y HTTPS"""
         # Inicializar MongoDB si el logging está habilitado
         if config.get('logs', True):
             print("🔌 Inicializando conexión a MongoDB...")
             await mongodb_client.connect()
 
         http_port = config.get('default_http_port', 3080)
+        https_port = config.get('default_https_port', 3453)
 
         print(f"🚀 Iniciando Tech Web Server...")
         print(f"📡 Puerto HTTP: {http_port}")
+        print(f"🔐 Puerto HTTPS: {https_port}")
         print(f"📊 Dashboard: http://localhost:{config.get('dashboard_port', 8000)}")
 
         # Mostrar versiones PHP disponibles
@@ -259,25 +263,92 @@ class TechWebServer:
         else:
             print("⚠️  No hay versiones de PHP disponibles")
 
+        # Verificar certificados SSL disponibles
+        ssl_certificates = ssl_manager.list_available_certificates()
+        if ssl_certificates:
+            print(f"🔐 Certificados SSL disponibles:")
+            for domain, cert_info in ssl_certificates.items():
+                status = "✅" if cert_info['available'] else "❌"
+                print(f"   {status} {domain}")
+        else:
+            print("⚠️  No hay certificados SSL disponibles")
+
         print(f"🌐 Virtual hosts configurados:")
         for vhost in config.get_virtual_hosts():
             php_info = f" (PHP {vhost.get('php_version', 'N/A')})" if vhost.get('php_enabled') else " (solo HTML)"
-            print(f"   - {vhost['domain']} -> {vhost['document_root']}{php_info}")
-        
+            ssl_info = " [SSL]" if vhost.get('ssl_enabled', False) else ""
+            print(f"   - {vhost['domain']} -> {vhost['document_root']}{php_info}{ssl_info}")
+
         # Crear runner
         runner = web.AppRunner(self.app)
         await runner.setup()
-        
+
+        # Lista para almacenar todos los sites
+        sites = []
+
         # Crear site HTTP
-        site = web.TCPSite(
-            runner, 
-            '0.0.0.0', 
+        http_site = web.TCPSite(
+            runner,
+            '0.0.0.0',
             http_port,
             backlog=config.get('max_concurrent_connections', 300)
         )
-        
-        await site.start()
-        print(f"✅ Servidor iniciado en http://localhost:{http_port}")
+
+        await http_site.start()
+        sites.append(http_site)
+        print(f"✅ Servidor HTTP iniciado en http://localhost:{http_port}")
+
+        # Crear servidor HTTPS usando certificado wildcard o localhost
+        ssl_enabled_hosts = [vhost for vhost in config.get_virtual_hosts() if vhost.get('ssl_enabled', False)]
+
+        if ssl_enabled_hosts:
+            # Intentar usar certificado wildcard primero, luego localhost
+            ssl_context = None
+            cert_used = None
+
+            # Intentar wildcard para *.local
+            if ssl_manager.is_ssl_available('wildcard-local'):
+                ssl_context = ssl_manager.get_ssl_context('wildcard-local')
+                cert_used = 'wildcard-local (*.local)'
+
+            # Si no hay wildcard, usar localhost
+            if not ssl_context and ssl_manager.is_ssl_available('localhost'):
+                ssl_context = ssl_manager.get_ssl_context('localhost')
+                cert_used = 'localhost'
+
+            # Como último recurso, usar el primer dominio disponible
+            if not ssl_context:
+                for vhost in ssl_enabled_hosts:
+                    domain = vhost['domain']
+                    if ssl_manager.is_ssl_available(domain):
+                        ssl_context = ssl_manager.get_ssl_context(domain)
+                        cert_used = domain
+                        break
+
+            if ssl_context:
+                try:
+                    https_site = web.TCPSite(
+                        runner,
+                        '0.0.0.0',
+                        https_port,
+                        ssl_context=ssl_context,
+                        backlog=config.get('max_concurrent_connections', 300)
+                    )
+
+                    await https_site.start()
+                    sites.append(https_site)
+
+                    ssl_domains = [vhost['domain'] for vhost in ssl_enabled_hosts]
+                    print(f"✅ Servidor HTTPS iniciado en puerto {https_port}")
+                    print(f"🔐 Certificado usado: {cert_used}")
+                    print(f"🌐 Dominios SSL configurados: {', '.join(ssl_domains)}")
+
+                except Exception as e:
+                    print(f"❌ Error iniciando servidor HTTPS: {e}")
+            else:
+                print("⚠️  No se encontraron certificados SSL válidos")
+        else:
+            print("ℹ️  No se inició servidor HTTPS (no hay virtual hosts con SSL habilitado)")
 
         # Iniciar dashboard
         dashboard_port = config.get('dashboard_port', 8000)
@@ -295,12 +366,12 @@ class TechWebServer:
         await dashboard_site.start()
         print(f"📊 Dashboard iniciado en http://{dashboard_bind_ip}:{dashboard_port}")
 
-        return runner, dashboard_runner
+        return runner, dashboard_runner, sites
 
 async def main():
     """Función principal para ejecutar el servidor"""
     server = TechWebServer()
-    runner, dashboard_runner = await server.start_server()
+    runner, dashboard_runner, sites = await server.start_server()
 
     try:
         # Mantener el servidor corriendo
@@ -311,6 +382,10 @@ async def main():
     finally:
         await runner.cleanup()
         await dashboard_runner.cleanup()
+
+        # Limpiar contextos SSL
+        ssl_manager.cleanup_ssl_contexts()
+
         print("✅ Servidor detenido")
 
 if __name__ == '__main__':

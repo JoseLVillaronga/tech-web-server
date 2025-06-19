@@ -1,0 +1,1039 @@
+(base) ✔ ~/tech-web-server [main L|✚ 2…2]
+17:11 $ curl -k -H "Host: localhost" https://localhost:3453
+curl -k -H "Host: tech-support.local" https://localhost:3453
+curl -k -H "Host: intranet.local" https://localhost:3453
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Web Server - Funcionando!</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        .status { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Tech Web Server</h1>
+        <p class="status">✅ Servidor funcionando correctamente!</p>
+        <p>Este es el servidor web alternativo a Apache2 construido con Python y asyncio.</p>
+        <p><strong>Características:</strong></p>
+        <ul>
+            <li>Servidor asyncio de alta concurrencia</li>
+            <li>Soporte para virtual hosts</li>
+            <li>Integración con PHP-FPM</li>
+            <li>Certificados Let's Encrypt</li>
+            <li>Logging avanzado con geolocalización</li>
+            <li>Dashboard de administración</li>
+        </ul>
+    </div>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Soluciones Tecnológicas Integrales para Empresas | Tech-Support</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-3d.png">
+    <link rel="shortcut icon" href="images/favicon-3d.png">
+    <link rel="alternate" hreflang="es-ar" href="https://www.tech-support.com.ar">
+    <link rel="canonical" href="https://www.tech-support.com.ar">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0">
+
+    <!-- Optimización de conexiones externas -->
+    <link rel="dns-prefetch" href="https://code.jquery.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://s3.amazonaws.com">
+    <link rel="preconnect" href="https://code.jquery.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://s3.amazonaws.com" crossorigin>
+
+    <!-- JavaScript -->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="owl-carousel/owl.carousel.js"></script>
+    <script type="text/javascript" src="js/bin/materialize.min.js"></script>
+
+    <!-- CSS -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection"/>
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- CSS crítico para Owl Carousel -->
+    <link rel="stylesheet" href="owl-carousel/owl.carousel.css">
+    <link rel="stylesheet" href="owl-carousel/owl.theme.css">
+    <link rel="stylesheet" href="owl-carousel/owl.transitions.css">
+
+    <!-- CSS no crítico con carga diferida -->
+    <link rel="stylesheet" href="https://s3.amazonaws.com/icomoon.io/114779/Socicon/style.css?u8vidh" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="css/icofont.min.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://s3.amazonaws.com/icomoon.io/114779/Socicon/style.css?u8vidh">
+        <link rel="stylesheet" href="css/icofont.min.css">
+    </noscript>
+
+    <!-- Estilos críticos inline para renderizado inicial -->
+    <style>
+    /* Estilos críticos para el primer renderizado */
+
+    /* Reset básico */
+    * {
+        margin: 0;
+        padding: 0;
+        border: none;
+    }
+
+    /* Estilos de contenido */
+    #content2 {
+        background-color: #ffffff;
+    }
+
+    /* Estilos críticos para la barra de navegación */
+    .navbar-fixed nav .nav-wrapper ul.right li a {
+        line-height: 64px;
+        height: 64px;
+        padding: 0 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .navbar-fixed nav {
+        height: 64px;
+        line-height: 64px;
+    }
+
+    .navbar-fixed nav .nav-wrapper {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        position: relative;
+    }
+
+    .navbar-fixed nav .nav-wrapper ul.right {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        margin: 0;
+        float: none;
+        right: auto;
+    }
+
+    .navbar-fixed nav .nav-wrapper .brand-logo {
+        display: flex;
+        align-items: center;
+        height: 64px;
+        position: absolute;
+        left: 10px;
+        transform: none;
+    }
+
+    /* Estilos para dispositivos móviles */
+    @media only screen and (max-width: 992px) {
+        .navbar-fixed nav .nav-wrapper .brand-logo {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .navbar-fixed nav .nav-wrapper ul.right {
+            display: none;
+        }
+    }
+
+    /* Layout containers */
+    .container {
+        width: 90%;
+        margin: 0 auto;
+    }
+
+    @media only screen and (min-width: 601px) {
+        .container {
+            width: 85%;
+        }
+    }
+
+    @media only screen and (min-width: 993px) {
+        .container {
+            width: 70%;
+        }
+    }
+
+    /* Colores básicos */
+    .indigo.lighten-1 {
+        background-color: #5c6bc0 !important;
+    }
+
+    .white-text {
+        color: #ffffff !important;
+    }
+
+    /* Utilidades críticas */
+    .hide-on-med-and-down {
+        display: flex;
+    }
+
+    @media only screen and (max-width: 992px) {
+        .hide-on-med-and-down {
+            display: none !important;
+        }
+    }
+    </style>
+
+    <!-- Metadata SEO -->
+    <meta name="author" content="José Luis Villaronga">
+    <meta name="description" content="Tech-Support ofrece servicios completos de IT: desarrollo web, soporte técnico, comunicaciones unificadas y sistemas a medida para PyMEs en Argentina.">
+    <meta name="keywords" content="soluciones tecnológicas, soporte técnico, desarrollo web, comunicaciones unificadas, sistemas a medida, PyMEs Argentina">
+    <meta name="generator" content="brain, two hands and a keyboard">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Soluciones Tecnológicas Integrales para Empresas | Tech-Support">
+    <meta property="og:description" content="Tech-Support ofrece servicios completos de IT: desarrollo web, soporte técnico, comunicaciones unificadas y sistemas a medida para PyMEs en Argentina.">
+    <meta property="og:image" content="https://www.tech-support.com.ar/img/logo-3d.png">
+    <meta property="og:url" content="https://www.tech-support.com.ar">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_AR">
+    <meta property="og:site_name" content="Tech-Support">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Soluciones Tecnológicas Integrales para Empresas | Tech-Support">
+    <meta name="twitter:description" content="Tech-Support ofrece servicios completos de IT: desarrollo web, soporte técnico, comunicaciones unificadas y sistemas a medida para PyMEs en Argentina.">
+    <meta name="twitter:image" content="https://www.tech-support.com.ar/img/logo-3d.png">
+
+    <!-- Schema.org markup -->
+    <script type="application/ld+json">{
+    "@context": "http:\/\/schema.org",
+    "@type": "Organization",
+    "name": "Tech-Support",
+    "url": "https:\/\/www.tech-support.com.ar",
+    "logo": "https:\/\/www.tech-support.com.ar\/img\/logo-3d.png",
+    "description": "Tech-Support ofrece soluciones IT completas para pequeñas empresas: desarrollo web, soporte técnico, comunicaciones unificadas 3CX y sistemas a medida en Argentina.",
+    "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Buenos Aires",
+        "addressRegion": "CABA",
+        "addressCountry": "Argentina"
+    },
+    "telephone": "+5411-5278-2252",
+    "email": "info@tech-support.com.ar",
+    "contactPoint": [
+        {
+            "@type": "ContactPoint",
+            "telephone": "+5411-5278-2252",
+            "contactType": "customer service",
+            "availableLanguage": [
+                "Spanish",
+                "English"
+            ]
+        }
+    ],
+    "sameAs": [
+        "https:\/\/www.facebook.com\/techSupport.com.ar\/"
+    ]
+}</script>
+    <!-- Google Analytics - Carga asíncrona -->
+    <script async>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-102165194-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+</head>
+<body onkeydown="if (event.keyCode == 27) window.open('','_self').close();if (event.keyCode == 113) window.open('/login.php','_blank');if (event.keyCode == 115) location.href='visitas.php';">
+
+    <!-- Navigation -->
+    <div class="navbar-fixed">
+        <nav>
+            <div class="nav-wrapper indigo lighten-1">
+                <div style="height: 7px;width: 50px;margin-left: 10px;"></div>
+                <a href="index.php" class="brand-logo">
+                    <img src="img/logo-3d.png" style="width: 50px;height: 50px;" alt="Tech-Support" title="Tech-Support" id="logo">
+                </a>
+                <a href="#" data-activates="mobile-demo" class="button-collapse">
+                    <i class="material-icons">menu</i>
+                </a>
+                <ul class="right hide-on-med-and-down">
+                    <li><a href="index.php" class="active">Inicio</a></li>
+                    <li><a href="nosotros.php" >Nosotros</a></li>
+                    <li><a href="productos.php" >Productos</a></li>
+                    <li><a href="clientes.php" >Clientes</a></li>
+                    <li><a href="contacto.php" >Contacto</a></li>
+                    <li class="language-selector">
+                        <a href="javascript:void(0)" class="dropdown-trigger" data-activates="language-dropdown">
+                            <i class="material-icons left">language</i>
+                            ES                            <i class="material-icons right">arrow_drop_down</i>
+                        </a>
+                        <ul id="language-dropdown" class="dropdown-content">
+                            <li><a href="change_language.php?lang=es" class="active">ES</a></li>
+                            <li><a href="change_language.php?lang=en" >EN</a></li>
+                            <li><a href="change_language.php?lang=pt" >PT</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="search-container">
+                    <form action="search_handler.php" method="get">
+                        <div class="input-field">
+                            <i class="material-icons search-icon">search</i>
+                            <input id="search" type="search" name="q" placeholder="Buscar..." required>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <ul class="side-nav" id="mobile-demo">
+        <li class="logo" id="menu-lateral-logo">
+            <div style="height: 90px;width: 100%;" class="indigo lighten-1">
+                <img src="img/logo-3d.png" id="logo2" width="80" title="Tech-Support" style="width: 80px;height: 80px;">
+                <i style="display: inline-block !important;vertical-align: middle;margin-bottom: 60px;font-weight: bold;font-size: 120%;color: white;">Tech-Support</i>
+            </div>
+        </li>
+        <!-- Botón de búsqueda independiente -->
+        <li class="search-icon-container">
+            <a href="#" class="search-trigger">
+                <i class="material-icons white-text">search</i>
+            </a>
+        </li>
+        <li><a href="index.php" class="active">Inicio</a></li>
+        <li><a href="nosotros.php" >Nosotros</a></li>
+        <li><a href="productos.php" >Productos</a></li>
+        <li><a href="clientes.php" >Clientes</a></li>
+        <li><a href="contacto.php" >Contacto</a></li>
+        <li class="divider"></li>
+        <li>
+            <a href="change_language.php?lang=es" class="language-option active">
+                <i class="material-icons left">language</i> Español
+            </a>
+        </li>
+        <li>
+            <a href="change_language.php?lang=en" class="language-option ">
+                <i class="material-icons left">language</i> English
+            </a>
+        </li>
+        <li>
+            <a href="change_language.php?lang=pt" class="language-option ">
+                <i class="material-icons left">language</i> Português
+            </a>
+        </li>
+    </ul>
+
+    <!-- Formulario de búsqueda móvil flotante -->
+    <div id="mobile-search-form" class="mobile-search-container">
+        <form action="search_handler.php" method="get">
+            <div class="input-field">
+                <input id="search-mobile" type="search" name="q" placeholder="Buscar..." required>
+                <label for="search-mobile"><i class="material-icons">search</i></label>
+                <i class="material-icons close-search">close</i>
+            </div>
+        </form>
+    </div>
+
+    <div id="content" class="col s12">
+        <div id="content2" class="col s12">
+            <main class="container">
+                <script>
+                    $(document).ready(function() {
+                        // Inicializar el menú móvil
+                        $(".button-collapse").sideNav();
+
+                        // Inicializar el dropdown de idiomas
+                        $('.dropdown-trigger').dropdown({
+                            inDuration: 300,
+                            outDuration: 225,
+                            constrainWidth: false,
+                            hover: false,
+                            gutter: 0,
+                            belowOrigin: true,
+                            alignment: 'left',
+                            stopPropagation: false
+                        });
+
+                        // Mostrar/ocultar el formulario de búsqueda móvil
+                        $('.search-trigger').on('click', function(e) {
+                            e.preventDefault();
+                            $('#mobile-search-form').addClass('active');
+                            setTimeout(function() {
+                                $('#search-mobile').focus();
+                            }, 300);
+                        });
+
+                        $('.close-search').on('click', function() {
+                            $('#mobile-search-form').removeClass('active');
+                        });
+                    });
+                </script>                       <div>
+                        <br>
+                                <!-- Nav tabs -->
+                                <ul class="tabs tabs-transparent blue-grey darken-1" role="tablist">
+                                    <li class="tab" role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Desarrollo</a></li>
+                                    <li class="tab" role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Soporte</a></li>
+                                    <li class="tab" role="presentation"><a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">Contacto</a></li>
+                                </ul>
+
+                                <!-- Tab panes -->
+                                <div class="tab-content">
+                                    <div role="tabpanel" class="tab-pane active" id="home">
+                                        <h5>Desarrollo Web</h5>
+                                        <p>Desarrollo de sitios y aplicaciones Web (PHP, MySQL), hosting, instalación y configuración de servidores ...</p>
+                                        <br>
+                                        <div class="marco" id="home">
+                                                        <div id="jlv2" class="owl-carousel">
+                                                                <div class="item"><img src="img/desarrollo/3cx-partner.jpg" loading="lazy" alt="Tech-Support - Partner oficial de 3CX en Argentina">
+                                                                </div>
+                                                                <div class="item"><img src="img/desarrollo/web-design-2038872_1920.jpg" loading="lazy" alt="Desarrollo de sitios web profesionales y responsivos para empresas">
+                                                                </div>
+                                                                <div class="item"><img src="img/desarrollo/code-647012_1920.jpg" loading="lazy" alt="Programación de aplicaciones web a medida con PHP, Python y MySQL">
+                                                                </div>
+                                                                <div class="item"><img src="img/desarrollo/ux-787980_1920.jpg" loading="lazy" alt="Diseño UX/UI centrado en la experiencia del usuario para sitios web">
+                                                                </div>
+                                                                <div class="item"><img src="img/desarrollo/code-944504.jpg" loading="lazy" alt="Desarrollo de sistemas web personalizados para PyMEs en Argentina">
+                                                                </div>
+                                                                <div class="item"><img src="img/desarrollo/structure-620304_1920.jpg" loading="lazy" alt="Arquitectura de sistemas y bases de datos optimizadas">
+                                                                </div>
+                                                                <div class="item"><img src="img/desarrollo/computer-1869236_1920.jpg" loading="lazy" alt="Soluciones informáticas integrales para empresas">
+                                                                </div>
+                                                        </div>
+                                                </div><br><br>
+                                    </div>
+                                    <div role="tabpanel" class="tab-pane" id="profile">
+                                        <h5>Soporte IT</h5>
+                                        <p>Soluciones de conectividad, configuración de routers (Mikrotik), mantenimiento de servidores PC y redes, backup de datos automatizado ...</p>
+                                        <br>
+                                        <div class="marco">
+                                                        <div id="jlv1" class="owl-carousel">
+                                                                <div class="item"><img src="img/desarrollo/3cx-partner.jpg" loading="lazy" alt="Tech-Support - Implementación y soporte de centrales 3CX">
+                                                                </div>
+                                                                <div class="item"><img src="img/soporte/apple-1846666_1920.jpg" loading="lazy" alt="Soporte técnico para computadoras y dispositivos en entorno empresarial">
+                                                                </div>
+                                                                <div class="item"><img src="img/soporte/server-1235959.jpg" loading="lazy" alt="Instalación y mantenimiento de servidores empresariales">
+                                                                </div>
+                                                                <div class="item"><img src="img/soporte/apple-1839873_1920.jpg" loading="lazy" alt="Soporte para dispositivos móviles y tablets en entorno corporativo">
+                                                                </div>
+                                                                <div class="item"><img src="img/soporte/switch-2064089_1920.jpg" loading="lazy" alt="Configuración de redes y switches Mikrotik para empresas">
+                                                                </div>
+                                                                <div class="item"><img src="img/soporte/memory-870724_1920.jpg" loading="lazy" alt="Mantenimiento y actualización de hardware para equipos empresariales">
+                                                                </div>
+                                                                <div class="item"><img src="img/soporte/micro-chip-19980_1920.jpg" loading="lazy" alt="Soluciones de infraestructura IT a medida para PyMEs">
+                                                                </div>
+                                                        </div>
+                                                </div><br><br>
+                                    </div>
+                                    <div role="tabpanel" class="tab-pane" id="messages">
+                                    <br><br>
+                                        <p>
+                                                                <ul class="collapsible" data-collapsible="accordion">
+                                                                          <li>
+                                                                            <div class="collapsible-header blue-grey white-text active"><i class="material-icons">email</i>E-Mail</div>
+                                                                            <div class="collapsible-body">
+                                                                                <p class="flow-text"><a href="mailto:info@tech-support.com.ar">info@tech-support.com.ar</a></p>
+                                                                            </div>
+                                                                          </li>
+                                                                          <li>
+                                                                            <div class="collapsible-header blue-grey white-text"><i class="material-icons">phone</i>Teléfonos</div>
+                                                                            <div class="collapsible-body">
+                                                                                <p class="flow-text"><i class="material-icons">phone</i> +54(11)4635-7367</p>
+                                                                                <p class="flow-text"><i class="material-icons">phone</i> +54(911)2838-3050</p>
+                                                                                <p class="flow-text"><i class="material-icons">print</i> +1(315)326-3292</p>
+                                                                            </div>
+                                                                          </li>
+                                                                          <li>
+                                                                            <div class="collapsible-header blue-grey white-text" id="chat"><i class="material-icons">chat</i>Chat</div>
+                                                                            <div class="collapsible-body">
+                                                                                <p class="flow-text">
+                                                                                        <a href="javascript:void(0)" onclick="window.open('https://tech-support3.3cx.us:5001/001','chat','toolbar=0,status=0,titlebar=no,width=450,height=580')"><i class="material-icons">chat</i> Chat y llamada desde la Web</a>
+                                                                                </p>
+                                                                                <br><br>
+                                                                                <p class="flow-text">Escanea el código de abajo con la camara y se abrirá el Messenger de Facebook para comenzar un chat ...</p>
+                                                                                <p class="flow-text"><img src="images/qr_circle_grad.png" loading="lazy" alt="Facebook Messenger QR" style="display: block;height: 260px;margin: auto;"></p>
+                                                                            </div>
+                                                                          </li>
+                                                                        </ul>
+                                        </p>
+                                    </div>
+                                </div><br><br>
+
+                        </div>
+                        <section>
+
+                        </section>
+    <style>
+    #jlv1 .item img{
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+    #jlv2 .item img{
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+    .marco{
+        -moz-border-radius: 5px;
+        -webkit-border-radius: 5px;
+        border-radius: 5px;
+        height: auto;
+        overflow: hidden;
+        background-color: #E4F7FB;
+        border: solid .5px rgba(0,0,0,.15);
+    }
+    </style>
+
+<!-- Script de inicialización de carousels -->
+<script>
+// Inicialización de carousels
+function initializeCarousels() {
+  if (typeof $.fn.owlCarousel !== 'undefined') {
+
+    // Inicializar carousel 1 (Soporte)
+    if ($("#jlv1").length > 0) {
+      $("#jlv1").owlCarousel({
+        autoPlay: 3000,
+        stopOnHover: true,
+        lazyLoad: true,
+        navigation: true,
+        singleItem: true,
+        autoHeight: true,
+        transitionStyle: "fadeUp"
+      });
+    }
+
+    // Inicializar carousel 2 (Desarrollo)
+    if ($("#jlv2").length > 0) {
+      $("#jlv2").owlCarousel({
+        autoPlay: 3000,
+        stopOnHover: true,
+        lazyLoad: true,
+        navigation: true,
+        singleItem: true,
+        autoHeight: true,
+        transitionStyle: "fadeUp"
+      });
+    }
+  }
+}
+
+// Inicialización cuando el DOM esté listo
+$(document).ready(function() {
+  setTimeout(initializeCarousels, 2000);
+});
+
+// Backup para asegurar inicialización
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    if (typeof $ !== 'undefined') {
+      initializeCarousels();
+    }
+  }, 1000);
+});
+</script>
+
+                </main>
+</div></div>
+<div class="fixed-action-btn horizontal click-to-toggle" style="margin-bottom: 20px;">
+  <a class="btn-floating btn-large blue">
+    <i class="material-icons">chat</i>
+  </a>
+  <ul>
+    <li><a href="contacto.php" class="btn-floating grey darken-3" title="Asistente IA"><i class="material-icons">assistant</i></a></li>
+    <li><a href="https://m.me/1698273907093204?fbclid=IwAR2Srd5ACGyB7HqY4Z5zyCYuvEgSyhyicUpJOU_NGgZirTx1xe0bRUzIOqA" target="_blank" class="btn-floating indigo lighten-1" title="Facebook Messenger"><i class="icofont-facebook-messenger"></i></a></li>
+    <li><a href="tel:+541146357367" class="btn-floating blue" title="Teléfono"><i class="material-icons">phone</i></a></li>
+    <li><a href="https://api.whatsapp.com/send?phone=5491128383050&text=Estoy%20interesado%20en%20contactarlo" target="_blank" class="btn-floating green" title="Whatsapp"><i class="icofont-whatsapp"></i></a></li>
+  </ul>
+</div>
+<footer class="page-footer indigo lighten-1">
+  <div class="container">
+    <div class="row">
+      <div class="col l6 s12">
+        <h5 class="white-text">Tech-Support - Todo en Uno</h5>
+        <p class="grey-text text-lighten-4">Somos una empresa dedicada a brindar soluciones informáticas integrales.</p>
+        <table class="responsive-table">
+          <tr>
+            <td>
+              <a href="https://twitter.com/share" class="twitter-share-button" data-url="https://www.tech-support.com.ar" data-lang="es">Twittear</a>
+              <script defer>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+            </td>
+            <td>
+              <script src="//platform.linkedin.com/in.js" type="text/javascript" defer> lang: es_ES</script><br />
+              <script type="IN/Share" data-url="https://www.tech-support.com.ar?1750363914=1" data-counter="right"></script>
+            </td>
+            <td>
+              <div
+                class="fb-like"
+                data-share="true"
+                data-width="260"
+                data-show-faces="true">
+              </div>
+            </td>
+          </tr>
+        </table>
+
+      </div>
+      <div class="col l4 offset-l2 s12">
+        <h5 class="white-text">Conectarse</h5>
+        <ul id="pie">
+          <li><a class="grey-text text-lighten-3" href="contacto.php"><i class="material-icons">my_location</i> Contacto</a></li>
+          <li><a class="grey-text text-lighten-3" href="mailto:info@tech-support.com.ar"><i class="material-icons">email</i> info@tech-support.com.ar</a></li>
+          <li><a class="grey-text text-lighten-3" href="https://www.facebook.com/techSupport.com.ar/info/?entry_point=page_nav_about_item&tab=page_info" target="_blank"><em class="btn-floating indigo lighten-medium" style="margin-left: -8px;"><i class="icofont-facebook"></i></em> Facebook</a></li>
+          <li><a class="grey-text text-lighten-3" href="tel:+541146357367"><i class="material-icons">call_end</i> +54(11)4635-7367</a></li>
+          <li>
+
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer-copyright">
+    <div class="container">
+    2016 Tech-Support
+    </div>
+  </div>
+
+<script>
+  if (document.getElementById('widget-root')) {
+    document.getElementById('widget-root').click();
+  }
+</script>
+
+<!-- Script de inicialización principal -->
+<script>
+// Función para ajustar altura usando JavaScript puro
+function modificar() {
+    var h = window.innerHeight - 326;
+    document.getElementById('content').style.minHeight = h + 'px';
+    document.getElementById('content2').style.minHeight = h + 'px';
+}
+
+// Usar DOMContentLoaded en lugar de $(document).ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Document ready');
+
+    // Inicializar componentes de Materialize
+    // Nota: Materialize todavía depende de jQuery para la inicialización
+
+    // Inicializar dropdown
+    $(".dropdown-button").dropdown({
+        hover: false,
+        constrain_width: false,
+        belowOrigin: true
+    });
+
+    // Inicializar sidenav
+    $(".button-collapse").sideNav();
+
+    // Inicializar modales
+    $(".modal").modal({
+        dismissible: true,
+        opacity: .5,
+        inDuration: 300,
+        outDuration: 200,
+        startingTop: '4%',
+        endingTop: '10%'
+    });
+
+    // Ajustar altura
+    modificar();
+    window.addEventListener('resize', modificar);
+});
+</script>
+
+<!-- Scripts principales -->
+<!-- <script src="js/footer-scripts.js"></script> -->
+
+<!-- Scripts cargados al final para mejor rendimiento -->
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '1222118382866315',
+      xfbml      : true,
+      version    : 'v22.0'
+    });
+    FB.AppEvents.logPageView();
+  };
+
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "https://connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+</script>
+</footer>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="UTF-8">
+        <title>SGT | Teccam</title>
+        <!--<link rel="icon" href="img/logo.ico" sizes="32*32">-->
+        <link rel="shortcut icon" href="img/logo.png" type="image/png" sizes="32*32 64*64 215*215">
+    <link href="css/icon.css" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min2.css"  media="screen,projection"/>
+    <!-- Compiled and minified CSS -->
+    <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">-->
+    <!-- Compiled and minified JavaScript -->
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>-->
+    <!--Esrtilo propio-->
+        <link href="css/style.css" rel="stylesheet">
+    <!--<script src="assets/js/bootstrap-collapse.js"></script>
+    <script src="assets/js/bootstrap-transition.js"></script>
+    <script src="assets/js/bootstrap-tab.js"></script>-->
+    <link href="assets/js/google-code-prettify/prettify.css" rel="stylesheet">
+    <link href="js/jquery-ui.css" rel="stylesheet">
+    <!--<link rel="stylesheet" type="text/css" href="icofont/icofont.min.css">-->
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta id="request-method" name="request-method" content="GET" />
+    <style>
+        /* fallback */
+        @font-face {
+          font-family: 'Material Symbols Outlined';
+          font-style: normal;
+          font-weight: 100 700;
+          src: url(fonts/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsI.woff2) format('woff2');
+        }
+
+        .material-symbols-outlined {
+          font-family: 'Material Symbols Outlined';
+          font-weight: normal;
+          font-style: normal;
+          font-size: 24px;
+          line-height: 1;
+          letter-spacing: normal;
+          text-transform: none;
+          display: inline-block;
+          white-space: nowrap;
+          word-wrap: normal;
+          direction: ltr;
+          -moz-font-feature-settings: 'liga';
+          -moz-osx-font-smoothing: grayscale;
+        }
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+        #content {
+                min-height: 400px;
+                min-width: 90%;
+        }
+    </style>
+<style type="text/css">
+<!--
+.Estilo1 {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        font-weight: bold;
+}
+.Estilo2 {color: #000099}
+-->
+.menuTabla:hover {
+        -moz-box-shadow: 0px 0px 9px rgba(0, 0, 0, .9);
+        -webkit-box-shadow: 0px 0px 9px rgba(0, 0, 0, .9);
+        box-shadow: 0px 0px 9px rgba(0, 0, 0, .9);
+}
+.menuTabla:active {
+        -moz-box-shadow: 5px 5px 5px rgba(255, 0, 0, .7);
+        -webkit-box-shadow: 5px 5px 5px rgba(255, 0, 0, .7);
+        box-shadow: 5px 5px 5px rgba(255, 0, 0, .7);
+}
+.boton-celda:hover {
+    -moz-box-shadow: 0px 1px 19px #000000;
+    -webkit-box-shadow: 0px 1px 19px #000000;
+    -ms-box-shadow: 0px 1px 19px #000000;
+    box-shadow: 0px 1px 19px #000000;
+}
+.boton-celda:active {
+    -moz-box-shadow:inset 0px 1px 19px #000000;
+    -webkit-box-shadow:inset 0px 1px 19px #000000;
+    -ms-box-shadow:inset 0px 1px 19px #000000;
+    box-shadow:inset 0px 1px 19px #000000;
+    background-color: #7F7F7F;
+}
+        .cond {
+                display:auto;   }
+        .cond2 {
+                display:auto;   }
+        .bloqueado {
+                display:none;
+        }
+</style>
+</head>
+<body onload="modificar();" onresize="modificar();" onkeydown=" if (event.keyCode == 27) window.open('','_self').close();if (event.keyCode == 37) document.getElementById('atrasCSS').click();
+                                if (event.keyCode == 39) document.getElementById('adelanteCSS').click();LoadOnce();" class="fondo9">
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    <script src="assets/js/google-code-prettify/prettify.js"></script>
+    <script src="assets/js/application.js"></script>
+    <script type="text/javascript" src="js/inicio-m.js"></script>
+    <!--Resto de la página-->
+    <!-- Dropdown Structure -->
+        <ul id="dropdown3" class="dropdown-content" style="z-index: 30;">
+          <li><a href="javascript:window.open('https://intranet2.teccam.net:3543','AsistIA','toolbar=0,status=0,titlebar=no,width=1600,height=800')" class="waves-effect">Mensages Asistente IA</a></li><li><a href="divisas.php" class="waves-effect">Cotizaciones de Divisas y Monedas</a></li>     </ul>
+        <ul id="dropdown4" class="dropdown-content" style="z-index: 30;">
+                <li><a href="ARIA/index.php" target="_blank" class="waves-effect">ARIA</a></li>
+        <li><a href="lector-libros.php" class="waves-effect">Lector Documentos</a></li>
+                <li><a href="javascript:void()" class="waves-effect" onclick="window.open('cdr-busca-rem.php','ventana5','toolbar=0,status=0,titlebar=no,width=870,height=700');">Busca</a></li>
+                <li><a href="control-cm.php" class="waves-effect">Control CM</a></li>
+        <li><a href="javascript:void()" class="waves-effect" onclick="window.open('https://intranet2.teccam.net:3717/?timezone=America/Argentina/Buenos_Aires','ventana6','toolbar=0,status=0,titlebar=no,width=950,height=800');">OLT Cleaner Report</a></li>
+                <li class="indigo lighten-4"><a href="lista-ot-vf.php" class="waves-effect" style="color: black;">Lista ONTs verificación Firmware</a></li>
+                <li class="indigo lighten-4"><a href="ont_autofind.php" class="waves-effect" style="color: black;">ONT Autofind Teccam</a></li>
+                <li class="indigo lighten-4"><a href="ont_online.php" class="waves-effect" style="color: black;">ONT Online</a></li>
+                <li class="indigo lighten-4" title="Autor: Pedro Franco"><a href="http://192.168.1.121/onts/" target="_blank" class="waves-effect" style="color: black;">ONTs Autofind</a></li>
+                <li title="Autor: Pedro Franco"><a href="http://192.168.1.121/wikitecc/" target="_blank" class="waves-effect">WikiTecc</a></li>
+                <li><a href="wifi2g-eeuu.php" class="waves-effect">WiFi 2Ghz EEUU</a></li>
+                <li><a href="wifi5g-eeuu.php" class="waves-effect">WiFi 5Ghz EEUU</a></li>
+                <li><a href="impresion.php" class="waves-effect">IMPRESIÓN</a></li>
+                <li><a href="barcodegen1/" target="_blank" class="waves-effect">Gen. Código Barras</a></li>
+        </ul>
+        <ul id="dropdown5" class="dropdown-content" style="z-index: 30;">
+                        </ul>
+        <ul id="dropdown6" class="dropdown-content" style="z-index: 30;">
+                </ul>
+        <!-- Menú movil -->
+    <ul class="side-nav" id="mobile-demo">
+                        <li class="logo red accent-4" id="menu-lateral-logo">
+                                <div style="height: 100%;width: 100%;background-color: rgba(255,255,255,.6);">
+                        <object width="220" height="150" data="js/teccam.html" style="margin-left: 30px;"></object>
+                    </div>
+                </li>
+
+    </ul>
+    <!-- Menú PC -->
+    <div style="background-color: rgba(255,255,255,.65);">
+    <div class="navbar-fixed">
+        <nav class="indigo darken-4">
+          <div class="nav-wrapper">
+            <a onclick="location.href = 'logout.php'" ondblclick="location.href = 'logout.php?r=yes!'" title="Log Out" class="brand-logo"><img id="logo-cartel" src="img/favicon.png"></a>
+            <a href="#" data-activates="mobile-demo" class="button-collapse"><i class="material-icons">menu</i></a>
+            <ul class="right hide-on-med-and-down">
+
+            </ul>
+          </div>
+        </nav>
+    </div>    <main class="container" id="content" style="">
+        <h4 style="text-align: center;">Sistema de gestión Teccam</h4>
+        <br>
+        <h6 style="padding: 10px;">Bien venid@, Login aqui -> <a href="login.php?reset=1" class="btn-floating btn-medium waves-effect waves-light indigo"><i class="material-symbols-outlined">login</i></a></h6>
+        <div class="parallax-container">
+                        <h1 style="text-align: center;vertical-align: middle;margin-top: 240px;color: indigo;background-color: rgba(255,255,255,.3);">Página en construcción ... </h1>
+                <div class="parallax">
+                        <img src="imagenes/blogger-2838945_1920.jpg">
+                </div>
+        </div>
+        <div style="height: 20px;"></div>
+        <div class="parallax-container">
+                        <h1 style="text-align: center;vertical-align: middle;margin-top: 240px;color: indigo;background-color: rgba(255,255,255,.3);">Próximamente ...</h1>
+                <div class="parallax">
+                        <img src="imagenes/digital-marketing-1433427_1920.jpg">
+                </div>
+        </div>
+        <br>
+    </main>
+<style type="text/css" media="screen">
+    .parallax-container {
+      height: 500px;
+    }
+</style>
+    </div>
+    <footer class="page-footer red darken-4">
+      <div class="container">
+        <div class="row">
+          <div class="col l6 s12 m10">
+            <h5 class="white-text">Sistema de gestión Teccam</h5>
+            <p class="grey-text text-lighten-4">SGT, desarrollo de "Teccam S.R.L."</p>
+          </div>
+          <div class="col l4 offset-l2 s12 m2">
+            <h5 class="white-text">Contacto</h5>
+            <ul>
+              <li><a class="grey-text text-lighten-3" href="mailto:info@teccamsrl.com.ar">E-Mail : info@teccamsrl.com.ar</a></li>
+              <li><a class="grey-text text-lighten-3" href="https://www.teccam.net" target="_blank">Teccam S.R.L.</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-copyright">
+        <div class="container">
+       © 2021 Teccam S.R.L.
+        <a class="grey-text text-lighten-4 right" href="https://www.teccamsrl.com.ar" target="_blank">Desarrollo: Teccam S.R.L.</a>
+        </div>
+      </div>
+
+        <!-- INICIO CHAT WIDGET -->
+        <div class="teccam-chat-widget">
+            <button class="teccam-chat-button btn-floating btn-large waves-effect waves-light indigo darken-4">
+                <i class="material-icons">chat</i>
+            </button>
+        </div>
+
+        <!-- Ventana emergente con iframe -->
+        <div id="teccam-chat-iframe-container" style="display: none;">
+            <div id="teccam-chat-iframe-header" class="red white-text">
+                <h5 style="margin: 0;"> </h5>
+                <button id="teccam-close-iframe">✖</button>
+            </div>
+            <iframe id="teccam-chat-iframe" src="https://intranet2.teccam.net:3443" style="width: 100%; height: 90%; border: none;"></iframe>
+        </div>
+
+        <style>
+            .teccam-chat-widget {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 9999;
+            }
+
+            .teccam-chat-button {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                cursor: pointer;
+                background-color: #3949ab; /* Color del botón */
+                color: white; /* Color del ícono */
+                border: none;
+                width: 56px; /* Tamaño estándar del botón flotante */
+                height: 56px;
+                border-radius: 50%; /* Botón redondo */
+                display: flex;
+                align-items: center; /* Centrar verticalmente */
+                justify-content: center; /* Centrar horizontalmente */
+                box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2); /* Sombra */
+            }
+
+            #teccam-chat-iframe-container {
+                position: fixed;
+                bottom: 0;
+                right: 0;
+                width: 400px;
+                height: 750px;
+                background-color: white;
+                border-radius: 10px;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+                z-index: 9999;
+            }
+
+            #teccam-chat-iframe-header {
+                height: 50px;
+                background-color: #d32f2f; /* Color del encabezado */
+                display: flex;
+                align-items: center;
+                justify-content: space-between; /* Distribuir el título y la X */
+                padding: 0 10px; /* Espaciado interno */
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+            }
+
+            #teccam-close-iframe {
+                background: none;
+                border: none;
+                color: white; /* Color del icono */
+                font-size: 20px;
+                cursor: pointer;
+                margin-left: auto; /* Mueve la X al extremo derecho */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            @media only screen and (max-width: 700px) {
+                #teccam-chat-iframe-container {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 0;
+                }
+            }
+        </style>
+
+        <script>
+            (function() {
+                document.addEventListener('DOMContentLoaded', function() {
+                    const chatButton = document.querySelector('.teccam-chat-button');
+                    const iframeContainer = document.getElementById('teccam-chat-iframe-container');
+                    const closeIframeButton = document.getElementById('teccam-close-iframe');
+
+                    chatButton.addEventListener('click', function() {
+                        iframeContainer.style.display = 'block';
+                    });
+
+                    closeIframeButton.addEventListener('click', function() {
+                        iframeContainer.style.display = 'none';
+                    });
+                });
+            })();
+        </script>
+        <!-- FIN CHAT WIDGET -->
+
+    </footer>
+<script type="text/javascript" charset="utf-8">
+        changeFavicon('https://intranet2.teccam.net/img/logo.ico');
+</script>
+
+
+
+</body>
+<script>
+modificar();
+</script>
+<div id="chat-widget-container"></div>
+</html>
+(base) ✔ ~/tech-web-server [main L|✚ 2…2]
+17:11 $
+
+
+(venv) (base) ✔ ~/tech-web-server [main L|✚ 2…2]
+17:11 $ source venv/bin/activate && python main.py
+✅ PHP 7.1 disponible: /run/php/php7.1-fpm.sock
+✅ PHP 7.4 disponible: /run/php/php7.4-fpm.sock
+✅ PHP 8.2 disponible: /run/php/php8.2-fpm.sock
+✅ PHP 8.3 disponible: /run/php/php8.3-fpm.sock
+✅ PHP 8.4 disponible: /run/php/php8.4-fpm.sock
+⚠️  Base de datos GeoIP no encontrada: /var/lib/geoip/GeoLite2-Country.mmdb
+==================================================
+🚀 TECH WEB SERVER
+Servidor web de alta concurrencia con Python
+==================================================
+🔌 Inicializando conexión a MongoDB...
+🔌 Conectando a MongoDB: localhost:27017
+📁 Base de datos objetivo: tech_web_server
+🔍 Intentando conexión sin autenticación...
+✅ Conexión a MongoDB establecida
+✅ Índices de MongoDB creados correctamente
+✅ Conexión a MongoDB establecida correctamente
+🚀 Iniciando Tech Web Server...
+📡 Puerto HTTP: 3080
+🔐 Puerto HTTPS: 3453
+📊 Dashboard: http://localhost:8000
+🐘 PHP disponible: 7.1, 7.4, 8.2, 8.3, 8.4
+🔐 Certificados SSL disponibles:
+   ✅ test.local
+   ✅ intranet.local
+   ✅ wildcard-local
+   ✅ ca
+   ✅ tech-support.local
+   ✅ localhost
+🌐 Virtual hosts configurados:
+   - localhost -> ./public (PHP 8.3) [SSL]
+   - test.local -> ./public/tech-support (PHP 8.3)
+   - tech-support.local -> ./public/tech-support (PHP 8.3) [SSL]
+   - intranet.local -> ./public/intranet (PHP 8.3) [SSL]
+✅ Servidor HTTP iniciado en http://localhost:3080
+✅ Servidor HTTPS iniciado en puerto 3453
+🔐 Certificado usado: wildcard-local (*.local)
+🌐 Dominios SSL configurados: localhost, tech-support.local, intranet.local
+📊 Dashboard iniciado en http://0.0.0.0:8000
+PHP stderr: PHP message: PHP Warning:  Undefined array key "SCRIPT_NAME" in /var/www/Intranet2/config.php on line 12
+
+

@@ -2,7 +2,7 @@ virtual_hosts:
   - domain: "localhost"
     port: 3080
     document_root: "./public"
-    ssl_enabled: false
+    ssl_enabled: true
     php_enabled: true
     php_version: "8.3"
     php_pool: "www"
@@ -12,5 +12,21 @@ virtual_hosts:
     document_root: "./public/tech-support"
     ssl_enabled: false
     php_enabled: true
-    php_version: "8.3"  # Diferente versión para probar
+    php_version: "8.3"
+    php_pool: "www"
+
+  - domain: "tech-support.local"
+    port: 3080
+    document_root: "./public/tech-support"
+    ssl_enabled: true
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
+
+  - domain: "intranet.local"
+    port: 3080
+    document_root: "./public/intranet"
+    ssl_enabled: true
+    php_enabled: true
+    php_version: "8.3"
     php_pool: "www"
