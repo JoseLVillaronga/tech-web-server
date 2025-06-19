@@ -1,0 +1,16 @@
+# Servidor web asyncio
+aiohttp==3.9.1
+aiofiles==23.2.0
+
+# Configuración
+python-dotenv==1.0.0
+PyYAML==6.0.1
+
+# Logging y geolocalización
+geoip2==4.7.0
+
+# MongoDB (ya configurado)
+pymongo==4.6.1
+
+# Utilidades
+python-dateutil==2.8.2
