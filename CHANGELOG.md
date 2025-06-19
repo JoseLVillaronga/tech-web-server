@@ -36,12 +36,18 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
   - Soporte para configuración de sockets PHP-FPM
   - Validación de versiones PHP disponibles
 
+- **Compresión gzip/brotli**
+  - Compresión automática de respuestas
+  - Soporte para múltiples algoritmos
+  - Configuración por tipo de contenido
+
 ### Probado
 - ✅ localhost con PHP 8.3.22
 - ✅ test.local con PHP 7.4.33
 - ✅ phpinfo() funcionando correctamente
 - ✅ Variables $_SERVER configuradas correctamente
 - ✅ Headers HTTP pasados correctamente a PHP
+- ✅ Compresión gzip/brotli funcionando
 
 ## [0.1.0] - 2025-06-19
 
@@ -93,25 +99,61 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - ✅ Archivos estáticos servidos con tipos MIME correctos
 - ✅ Seguridad básica funcionando
 
+## [0.3.0] - 2025-06-19 - ✅ COMPLETADO
+
+### Agregado
+- **Sistema de logging completo con MongoDB**
+  - Cliente MongoDB asíncrono (`src/database/mongodb_client.py`)
+  - Logging dual: memoria + MongoDB persistente
+  - Base de datos `tech_web_server` creada automáticamente
+  - Colección `access_logs` con índices optimizados
+  - Información detallada: IP, país, método, path, status, user-agent, tiempo de respuesta
+  - Configuración habilitación/deshabilitación desde .env
+
+- **Geolocalización inteligente**
+  - Detección automática de IPs locales vs remotas (`src/logging/geoip_manager.py`)
+  - Soporte para GeoLite2 (opcional)
+  - Fallback inteligente cuando no hay base de datos GeoIP
+  - Clasificación LOCAL para IPs privadas
+
+- **Dashboard web funcional**
+  - Servidor dashboard completo (`src/dashboard/dashboard_server.py`)
+  - Interfaz web moderna en puerto 8000
+  - Estadísticas en tiempo real con API REST
+  - Visualización de logs recientes
+  - Distribución por países, tipos de request, códigos de estado
+  - Estado de virtual hosts y versiones PHP disponibles
+  - Acceso remoto configurado (0.0.0.0)
+
+### Mejorado
+- **Manejo de errores MongoDB**
+  - Conexión sin autenticación para MongoDB local
+  - Fallback a logging en memoria cuando MongoDB no disponible
+  - Validaciones correctas de colecciones MongoDB
+  - Mensajes informativos durante inicialización
+
+- **Sistema de logging**
+  - Logger principal (`src/logging/logger.py`) con doble destino
+  - Índices optimizados para consultas rápidas
+  - Cleanup automático de logs antiguos (configurable)
+
+### Probado
+- ✅ MongoDB conectado y guardando logs
+- ✅ Dashboard accesible remotamente en puerto 8000
+- ✅ Estadísticas en tiempo real funcionando
+- ✅ Geolocalización detectando IPs locales correctamente
+- ✅ API REST del dashboard respondiendo
+- ✅ Logs persistentes en MongoDB con toda la información
+
 ## [Próximas versiones]
 
-### [0.3.0] - Planificado
-- Sistema de logging con MongoDB
-- Geolocalización con GeoLite2
-- Logs detallados (IP, ruta, user-agent, país, timestamp)
-
 ### [0.4.0] - Planificado
-- Dashboard web de administración
-- Estadísticas en tiempo real
-- Visualización de logs
-- Métricas de rendimiento
-
-### [0.5.0] - Planificado
-- Compresión gzip/brotli
 - Soporte SSL/TLS
 - Integración Let's Encrypt
+- Certificados automáticos
 
-### [0.6.0] - Planificado
+### [0.5.0] - Planificado
 - Rate limiting
 - Headers de seguridad avanzados
 - Optimizaciones de rendimiento
+- Métricas avanzadas de sistema

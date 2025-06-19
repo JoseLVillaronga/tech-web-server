@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 from aiohttp import web, web_request
 from aiofiles import open as aio_open
 import mimetypes
@@ -10,6 +11,7 @@ from config.config_manager import config
 from php_fpm.php_manager import php_manager
 from dashboard.dashboard_server import DashboardServer
 from utils.geoip import geoip_manager
+from database.mongodb_client import mongodb_client
 
 class TechWebServer:
     """Servidor web principal con soporte para virtual hosts"""
@@ -45,34 +47,70 @@ class TechWebServer:
             # Obtener la ruta del archivo
             path = request.path.lstrip('/')
             if not path:
-                path = 'index.html'
-            
+                path = ''  # Dejar vacío para que se resuelva como directorio
+
+            # Verificar rutas bloqueadas antes de construir el path completo
+            if path:
+                blocked_directories = ['.git', '.svn', '.hg', '.bzr', 'node_modules', '.vscode', '.idea']
+                path_parts = path.split('/')
+                for part in path_parts:
+                    if part.lower() in blocked_directories:
+                        return web.Response(text="Forbidden", status=403)
+
             # Construir ruta completa del archivo
             document_root = Path(vhost['document_root'])
-            file_path = document_root / path
-            
+
+            # Si path está vacío, usar directamente el document_root
+            if not path:
+                file_path = document_root
+            else:
+                file_path = document_root / path
+
             # Verificar que el archivo existe y está dentro del document_root
             try:
                 file_path = file_path.resolve()
                 document_root = document_root.resolve()
-                
+
                 if not str(file_path).startswith(str(document_root)):
                     return web.Response(text="Forbidden", status=403)
-                
+
                 if not file_path.exists():
                     return web.Response(text="Not Found", status=404)
                 
                 if file_path.is_dir():
-                    # Si es directorio, buscar index.html
-                    index_file = file_path / 'index.html'
-                    if index_file.exists():
-                        file_path = index_file
-                    else:
+                    # Si es directorio, buscar archivos index en orden de prioridad
+                    index_files = ['index.html', 'index.php', 'index.htm']
+                    index_found = False
+
+                    for index_name in index_files:
+                        index_file = file_path / index_name
+                        if index_file.exists():
+                            file_path = index_file
+                            index_found = True
+                            break
+
+                    if not index_found:
                         return web.Response(text="Directory listing not allowed", status=403)
                 
             except (OSError, ValueError):
                 return web.Response(text="Bad Request", status=400)
-            
+
+            # Bloquear acceso a archivos sensibles específicos
+            blocked_files = ['.env', '.htaccess', '.htpasswd', 'config.php', 'wp-config.php',
+                           '.gitignore', '.gitattributes', '.gitmodules']
+            blocked_extensions = ['.bak', '.backup', '.old', '.orig', '.tmp', '.log', '.swp', '.swo']
+
+            # Archivos que empiezan con . que están específicamente bloqueados
+            blocked_dot_files = ['.env', '.htaccess', '.htpasswd', '.gitignore', '.gitattributes',
+                               '.gitmodules', '.git', '.svn', '.hg', '.bzr']
+
+            # Verificar si el archivo final está bloqueado
+            filename = file_path.name.lower()
+            if (filename in blocked_files or
+                any(filename.endswith(ext) for ext in blocked_extensions) or
+                any(filename.startswith(blocked) for blocked in blocked_dot_files)):
+                return web.Response(text="Forbidden", status=403)
+
             # Verificar si es un archivo PHP
             if file_path.suffix.lower() == '.php' and vhost.get('php_enabled', False):
                 try:
@@ -146,6 +184,7 @@ class TechWebServer:
             ip = request.remote or '127.0.0.1'
             user_agent = request.headers.get('User-Agent', '')
             path = request.path
+            response_time = time.time() - start_time
 
             # Obtener código de país
             country_code = geoip_manager.get_country_code(ip)
@@ -153,6 +192,7 @@ class TechWebServer:
             # Obtener dominio del virtual host
             virtual_host_domain = vhost.get('domain', 'unknown') if vhost else 'unknown'
 
+            # Actualizar dashboard en tiempo real
             self.dashboard.update_stats(
                 request_type=request_type,
                 status_code=status_code,
@@ -162,13 +202,52 @@ class TechWebServer:
                 country_code=country_code,
                 virtual_host=virtual_host_domain
             )
+
+            # Logging persistente a MongoDB (si está habilitado)
+            if config.get('logs', True):
+                asyncio.create_task(self._log_to_mongodb(
+                    request, status_code, request_type, response_time,
+                    country_code, virtual_host_domain, user_agent
+                ))
+
         except Exception as e:
             print(f"Error logging request: {e}")
 
+    async def _log_to_mongodb(self, request: web_request.Request, status_code: int,
+                             request_type: str, response_time: float, country_code: str,
+                             virtual_host: str, user_agent: str):
+        """Registra la request en MongoDB de forma asíncrona"""
+        try:
+            request_data = {
+                'ip': request.remote or '127.0.0.1',
+                'country_code': country_code,
+                'method': request.method,
+                'path': request.path,
+                'query_string': request.query_string,
+                'status_code': status_code,
+                'request_type': request_type,
+                'virtual_host': virtual_host,
+                'user_agent': user_agent,
+                'response_time': response_time,
+                'content_length': 0,  # Se puede calcular si es necesario
+                'referer': request.headers.get('Referer', ''),
+                'protocol': f"{request.scheme.upper()}/{request.version.major}.{request.version.minor}"
+            }
+
+            await mongodb_client.log_request(request_data)
+
+        except Exception as e:
+            print(f"Error logging to MongoDB: {e}")
+
     async def start_server(self):
         """Inicia el servidor web"""
+        # Inicializar MongoDB si el logging está habilitado
+        if config.get('logs', True):
+            print("🔌 Inicializando conexión a MongoDB...")
+            await mongodb_client.connect()
+
         http_port = config.get('default_http_port', 3080)
-        
+
         print(f"🚀 Iniciando Tech Web Server...")
         print(f"📡 Puerto HTTP: {http_port}")
         print(f"📊 Dashboard: http://localhost:{config.get('dashboard_port', 8000)}")

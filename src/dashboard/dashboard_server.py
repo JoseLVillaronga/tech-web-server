@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Any
 
 from config.config_manager import config
+from database.mongodb_client import mongodb_client
 from php_fpm.php_manager import php_manager
 
 class DashboardServer:
@@ -36,6 +37,9 @@ class DashboardServer:
         self.app.router.add_get('/api/stats', self.api_stats)
         self.app.router.add_get('/api/virtual-hosts', self.api_virtual_hosts)
         self.app.router.add_get('/api/php-status', self.api_php_status)
+        self.app.router.add_get('/api/logs', self.api_logs)
+        self.app.router.add_get('/api/logs/historical', self.api_historical_logs)
+        self.app.router.add_get('/api/logs/filter-options', self.api_filter_options)
         self.app.router.add_get('/ws', self.websocket_handler)
         
         # Archivos estáticos del dashboard
@@ -90,7 +94,103 @@ class DashboardServer:
             'php_versions': php_info,
             'total_versions': len(php_versions)
         })
-    
+
+    async def api_logs(self, request: web_request.Request) -> web.Response:
+        """API de logs desde MongoDB"""
+        try:
+            # Parámetros de consulta
+            limit = int(request.query.get('limit', 50))
+            virtual_host = request.query.get('virtual_host', None)
+
+            # Obtener logs desde MongoDB
+            logs = await mongodb_client.get_recent_logs(limit=limit, virtual_host=virtual_host)
+
+            # Si MongoDB no está disponible, usar logs en memoria
+            if not logs and hasattr(self, 'recent_requests'):
+                logs = self.recent_requests[-limit:] if self.recent_requests else []
+
+            return web.json_response({
+                'logs': logs,
+                'total': len(logs),
+                'source': 'mongodb' if mongodb_client.connected else 'memory'
+            })
+
+        except Exception as e:
+            print(f"Error obteniendo logs: {e}")
+            return web.json_response({
+                'logs': [],
+                'total': 0,
+                'error': str(e)
+            }, status=500)
+
+    async def api_historical_logs(self, request: web_request.Request) -> web.Response:
+        """API de logs históricos con filtros avanzados"""
+        try:
+            # Parámetros de consulta
+            page = int(request.query.get('page', 1))
+            limit = int(request.query.get('limit', 50))
+
+            # Filtros opcionales
+            filters = {}
+            if request.query.get('start_date'):
+                filters['start_date'] = request.query.get('start_date')
+            if request.query.get('end_date'):
+                filters['end_date'] = request.query.get('end_date')
+            if request.query.get('ip'):
+                filters['ip'] = request.query.get('ip')
+            if request.query.get('virtual_host'):
+                filters['virtual_host'] = request.query.get('virtual_host')
+            if request.query.get('status_code'):
+                filters['status_code'] = request.query.get('status_code')
+            if request.query.get('method'):
+                filters['method'] = request.query.get('method')
+            if request.query.get('search_text'):
+                filters['search_text'] = request.query.get('search_text')
+
+            # Obtener logs históricos desde MongoDB
+            result = await mongodb_client.get_historical_logs(
+                page=page,
+                limit=limit,
+                filters=filters if filters else None
+            )
+
+            return web.json_response({
+                'success': True,
+                'data': result,
+                'source': 'mongodb'
+            })
+
+        except Exception as e:
+            print(f"Error obteniendo logs históricos: {e}")
+            return web.json_response({
+                'success': False,
+                'error': str(e),
+                'data': {
+                    'logs': [],
+                    'total_count': 0,
+                    'page': page,
+                    'total_pages': 0
+                }
+            }, status=500)
+
+    async def api_filter_options(self, request: web_request.Request) -> web.Response:
+        """API para obtener opciones disponibles para filtros"""
+        try:
+            options = await mongodb_client.get_filter_options()
+
+            return web.json_response({
+                'success': True,
+                'options': options
+            })
+
+        except Exception as e:
+            print(f"Error obteniendo opciones de filtro: {e}")
+            return web.json_response({
+                'success': False,
+                'error': str(e),
+                'options': {}
+            }, status=500)
+
     async def websocket_handler(self, request: web_request.Request) -> WebSocketResponse:
         """Maneja conexiones WebSocket para actualizaciones en tiempo real"""
         ws = WebSocketResponse()
@@ -374,6 +474,138 @@ th {
     padding: 20px;
 }
 
+/* Filtros de logs históricos */
+.filters-section {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.filter-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: white;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.btn-primary, .btn-secondary {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #7f8c8d;
+}
+
+.btn-secondary:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+/* Resultados históricos */
+.historical-results {
+    margin-top: 20px;
+}
+
+.results-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.results-info span {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+    padding: 15px 0;
+}
+
+.pagination button {
+    min-width: 100px;
+}
+
+#page-numbers {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.page-number {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 0.9rem;
+}
+
+.page-number.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.page-number:hover:not(.active) {
+    background: #f8f9fa;
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 10px;
@@ -388,6 +620,21 @@ th {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .results-info {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .pagination {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
 '''
 
@@ -398,12 +645,15 @@ class Dashboard {
     constructor() {
         this.ws = null;
         this.reconnectInterval = 5000;
+        this.currentPage = 1;
+        this.currentFilters = {};
         this.init();
     }
 
     init() {
         this.connectWebSocket();
         this.loadInitialData();
+        this.setupHistoricalLogsHandlers();
 
         // Actualizar cada 30 segundos si no hay WebSocket
         setInterval(() => {
@@ -446,7 +696,8 @@ class Dashboard {
         await Promise.all([
             this.loadStats(),
             this.loadVirtualHosts(),
-            this.loadPhpStatus()
+            this.loadPhpStatus(),
+            this.loadFilterOptions()
         ]);
     }
 
@@ -477,6 +728,19 @@ class Dashboard {
             this.updatePhpStatus(data.php_versions);
         } catch (error) {
             console.error('Error cargando estado PHP:', error);
+        }
+    }
+
+    async loadFilterOptions() {
+        try {
+            const response = await fetch('/api/logs/filter-options');
+            const data = await response.json();
+
+            if (data.success) {
+                this.populateFilterOptions(data.options);
+            }
+        } catch (error) {
+            console.error('Error cargando opciones de filtro:', error);
         }
     }
 
@@ -569,9 +833,190 @@ class Dashboard {
             `;
         }).join('');
     }
+
+    setupHistoricalLogsHandlers() {
+        // Botón aplicar filtros
+        document.getElementById('apply-filters').addEventListener('click', () => {
+            this.currentPage = 1;
+            this.loadHistoricalLogs();
+        });
+
+        // Botón limpiar filtros
+        document.getElementById('clear-filters').addEventListener('click', () => {
+            this.clearFilters();
+        });
+
+        // Paginación
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+                this.loadHistoricalLogs();
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            this.currentPage++;
+            this.loadHistoricalLogs();
+        });
+    }
+
+    populateFilterOptions(options) {
+        // Poblar select de IPs
+        const ipSelect = document.getElementById('filter-ip');
+        ipSelect.innerHTML = '<option value="">Todas las IPs</option>';
+        (options.top_ips || []).forEach(ip => {
+            ipSelect.innerHTML += `<option value="${ip}">${ip}</option>`;
+        });
+
+        // Poblar select de virtual hosts
+        const vhostSelect = document.getElementById('filter-vhost');
+        vhostSelect.innerHTML = '<option value="">Todos los hosts</option>';
+        (options.virtual_hosts || []).forEach(vhost => {
+            vhostSelect.innerHTML += `<option value="${vhost}">${vhost}</option>`;
+        });
+
+        // Poblar select de status codes
+        const statusSelect = document.getElementById('filter-status');
+        statusSelect.innerHTML = '<option value="">Todos los códigos</option>';
+        (options.status_codes || []).forEach(status => {
+            statusSelect.innerHTML += `<option value="${status}">${status}</option>`;
+        });
+
+        // Poblar select de métodos HTTP
+        const methodSelect = document.getElementById('filter-method');
+        methodSelect.innerHTML = '<option value="">Todos los métodos</option>';
+        (options.methods || []).forEach(method => {
+            methodSelect.innerHTML += `<option value="${method}">${method}</option>`;
+        });
+    }
+
+    async loadHistoricalLogs() {
+        const tbody = document.querySelector('#historical-logs tbody');
+        tbody.innerHTML = '<tr><td colspan="9" class="loading">Cargando logs históricos...</td></tr>';
+
+        try {
+            // Recopilar filtros
+            const filters = this.getFilters();
+
+            // Construir URL con parámetros
+            const params = new URLSearchParams({
+                page: this.currentPage,
+                limit: 50,
+                ...filters
+            });
+
+            const response = await fetch(`/api/logs/historical?${params}`);
+            const result = await response.json();
+
+            if (result.success) {
+                this.displayHistoricalLogs(result.data);
+            } else {
+                tbody.innerHTML = `<tr><td colspan="9" class="loading">Error: ${result.error}</td></tr>`;
+            }
+        } catch (error) {
+            console.error('Error cargando logs históricos:', error);
+            tbody.innerHTML = '<tr><td colspan="9" class="loading">Error cargando logs históricos</td></tr>';
+        }
+    }
+
+    getFilters() {
+        const filters = {};
+
+        const startDate = document.getElementById('start-date').value;
+        if (startDate) filters.start_date = new Date(startDate).toISOString();
+
+        const endDate = document.getElementById('end-date').value;
+        if (endDate) filters.end_date = new Date(endDate).toISOString();
+
+        const ip = document.getElementById('filter-ip').value;
+        if (ip) filters.ip = ip;
+
+        const vhost = document.getElementById('filter-vhost').value;
+        if (vhost) filters.virtual_host = vhost;
+
+        const status = document.getElementById('filter-status').value;
+        if (status) filters.status_code = status;
+
+        const method = document.getElementById('filter-method').value;
+        if (method) filters.method = method;
+
+        const searchText = document.getElementById('search-text').value;
+        if (searchText) filters.search_text = searchText;
+
+        return filters;
+    }
+
+    displayHistoricalLogs(data) {
+        const tbody = document.querySelector('#historical-logs tbody');
+        const { logs, total_count, page, total_pages, has_next, has_prev } = data;
+
+        // Actualizar información de resultados
+        document.getElementById('results-count').textContent = `${total_count} resultados`;
+        document.getElementById('pagination-info').textContent = `Página ${page} de ${total_pages}`;
+
+        // Actualizar botones de paginación
+        document.getElementById('prev-page').disabled = !has_prev;
+        document.getElementById('next-page').disabled = !has_next;
+
+        // Mostrar logs
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="loading">No se encontraron logs con los filtros aplicados</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = logs.map(log => {
+            const timestamp = new Date(log.timestamp).toLocaleString();
+            const statusClass = this.getStatusClass(log.status_code);
+
+            return `
+                <tr>
+                    <td>${timestamp}</td>
+                    <td>${log.ip}</td>
+                    <td>${log.country_name || log.country_code}</td>
+                    <td>${log.method}</td>
+                    <td title="${log.path}">${this.truncateText(log.path, 30)}</td>
+                    <td class="${statusClass}">${log.status_code}</td>
+                    <td>${log.virtual_host}</td>
+                    <td title="${log.user_agent}">${this.truncateText(log.user_agent, 40)}</td>
+                    <td>${log.response_time ? log.response_time.toFixed(3) + 's' : 'N/A'}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    clearFilters() {
+        document.getElementById('start-date').value = '';
+        document.getElementById('end-date').value = '';
+        document.getElementById('filter-ip').value = '';
+        document.getElementById('filter-vhost').value = '';
+        document.getElementById('filter-status').value = '';
+        document.getElementById('filter-method').value = '';
+        document.getElementById('search-text').value = '';
+
+        // Limpiar tabla
+        const tbody = document.querySelector('#historical-logs tbody');
+        tbody.innerHTML = '<tr><td colspan="9" class="loading">Haga clic en "Aplicar Filtros" para cargar logs históricos</td></tr>';
+
+        // Resetear paginación
+        this.currentPage = 1;
+        document.getElementById('results-count').textContent = '0 resultados';
+        document.getElementById('pagination-info').textContent = 'Página 1 de 1';
+    }
+
+    truncateText(text, maxLength) {
+        if (!text) return '';
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+
+    getStatusClass(statusCode) {
+        if (statusCode >= 200 && statusCode < 300) return 'status-200';
+        if (statusCode >= 300 && statusCode < 400) return 'status-300';
+        if (statusCode >= 400 && statusCode < 500) return 'status-400';
+        if (statusCode >= 500) return 'status-500';
+        return '';
+    }
 }
 
-// Inicializar dashboard cuando se carga la página
 document.addEventListener('DOMContentLoaded', () => {
     new Dashboard();
 });
@@ -642,7 +1087,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             <!-- Últimas requests -->
             <div class="card full-width">
-                <h2>📝 Últimas Requests</h2>
+                <h2>📝 Últimas Requests (Tiempo Real)</h2>
                 <div class="requests-table">
                     <table id="recent-requests">
                         <thead>
@@ -661,6 +1106,95 @@ document.addEventListener('DOMContentLoaded', () => {
                             <tr><td colspan="8" class="loading">Cargando...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Logs Históricos -->
+            <div class="card full-width">
+                <h2>🗄️ Logs Históricos (MongoDB)</h2>
+
+                <!-- Filtros -->
+                <div class="filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="start-date">Fecha Inicio:</label>
+                            <input type="datetime-local" id="start-date" class="filter-input">
+                        </div>
+                        <div class="filter-group">
+                            <label for="end-date">Fecha Fin:</label>
+                            <input type="datetime-local" id="end-date" class="filter-input">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-ip">IP:</label>
+                            <select id="filter-ip" class="filter-input">
+                                <option value="">Todas las IPs</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-vhost">Virtual Host:</label>
+                            <select id="filter-vhost" class="filter-input">
+                                <option value="">Todos los hosts</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-status">Status Code:</label>
+                            <select id="filter-status" class="filter-input">
+                                <option value="">Todos los códigos</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-method">Método HTTP:</label>
+                            <select id="filter-method" class="filter-input">
+                                <option value="">Todos los métodos</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="search-text">Buscar en Path/User-Agent:</label>
+                            <input type="text" id="search-text" class="filter-input" placeholder="Texto a buscar...">
+                        </div>
+                        <div class="filter-group">
+                            <button id="apply-filters" class="btn-primary">🔍 Aplicar Filtros</button>
+                            <button id="clear-filters" class="btn-secondary">🗑️ Limpiar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div class="historical-results">
+                    <div class="results-info">
+                        <span id="results-count">0 resultados</span>
+                        <div class="pagination-info">
+                            <span id="pagination-info">Página 1 de 1</span>
+                        </div>
+                    </div>
+
+                    <div class="requests-table">
+                        <table id="historical-logs">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>IP</th>
+                                    <th>País</th>
+                                    <th>Método</th>
+                                    <th>Path</th>
+                                    <th>Status</th>
+                                    <th>Virtual Host</th>
+                                    <th>User Agent</th>
+                                    <th>Tiempo Resp.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="9" class="loading">Haga clic en "Aplicar Filtros" para cargar logs históricos</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginación -->
+                    <div class="pagination">
+                        <button id="prev-page" class="btn-secondary" disabled>← Anterior</button>
+                        <span id="page-numbers"></span>
+                        <button id="next-page" class="btn-secondary" disabled>Siguiente →</button>
+                    </div>
                 </div>
             </div>
         </div>
