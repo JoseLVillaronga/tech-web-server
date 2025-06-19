@@ -4,13 +4,13 @@ virtual_hosts:
     document_root: "./public"
     ssl_enabled: false
     php_enabled: true
-    php_version: "8.2"
+    php_version: "8.3"
     php_pool: "www"
-  
+
   - domain: "test.local"
     port: 3080
     document_root: "./public/test"
     ssl_enabled: false
     php_enabled: true
-    php_version: "8.2"
+    php_version: "7.4"  # Diferente versión para probar
     php_pool: "www"

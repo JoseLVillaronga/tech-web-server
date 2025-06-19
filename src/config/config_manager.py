@@ -44,8 +44,13 @@ class ConfigManager:
             'geoip_update_interval_days': int(os.getenv('GEOIP_UPDATE_INTERVAL_DAYS', 7)),
             
             # PHP-FPM
-            'php_fpm_default_socket': os.getenv('PHP_FPM_DEFAULT_SOCKET', '/run/php/php8.2-fpm.sock'),
+            'php_fpm_default_socket': os.getenv('PHP_FPM_DEFAULT_SOCKET', '/run/php/php8.3-fpm.sock'),
             'php_fpm_timeout': int(os.getenv('PHP_FPM_TIMEOUT', 30)),
+            'php_fpm_sockets_71': os.getenv('PHP_FPM_SOCKETS_71'),
+            'php_fpm_sockets_74': os.getenv('PHP_FPM_SOCKETS_74'),
+            'php_fpm_sockets_82': os.getenv('PHP_FPM_SOCKETS_82'),
+            'php_fpm_sockets_83': os.getenv('PHP_FPM_SOCKETS_83'),
+            'php_fpm_sockets_84': os.getenv('PHP_FPM_SOCKETS_84'),
             
             # SSL
             'ssl_protocols': os.getenv('SSL_PROTOCOLS', 'TLSv1.2,TLSv1.3').split(','),

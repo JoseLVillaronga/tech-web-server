@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 from config.config_manager import config
+from php_fpm.php_manager import php_manager
 
 class TechWebServer:
     """Servidor web principal con soporte para virtual hosts"""
@@ -67,30 +68,59 @@ class TechWebServer:
             except (OSError, ValueError):
                 return web.Response(text="Bad Request", status=400)
             
-            # Determinar tipo MIME
-            content_type, _ = mimetypes.guess_type(str(file_path))
-            if content_type is None:
-                content_type = 'application/octet-stream'
-            
-            # Leer y servir el archivo
-            try:
-                async with aio_open(file_path, 'rb') as f:
-                    content = await f.read()
-                
-                # Crear respuesta
-                response = web.Response(
-                    body=content,
-                    content_type=content_type
-                )
-                
-                # Agregar headers de seguridad básicos
-                if not config.get('hide_server_header', True):
-                    response.headers['Server'] = 'TechWebServer/1.0'
-                
-                return response
-                
-            except IOError:
-                return web.Response(text="Internal Server Error", status=500)
+            # Verificar si es un archivo PHP
+            if file_path.suffix.lower() == '.php' and vhost.get('php_enabled', False):
+                try:
+                    # Ejecutar PHP a través de FastCGI
+                    status, headers, content = await php_manager.execute_php_file(request, vhost, file_path)
+
+                    # Crear respuesta
+                    response = web.Response(
+                        body=content,
+                        status=status
+                    )
+
+                    # Agregar headers de PHP
+                    for header_name, header_value in headers.items():
+                        if header_name.lower() != 'status':
+                            response.headers[header_name] = header_value
+
+                    # Agregar headers de seguridad básicos
+                    if not config.get('hide_server_header', True):
+                        response.headers['Server'] = 'TechWebServer/1.0'
+
+                    return response
+
+                except Exception as e:
+                    print(f"Error ejecutando PHP: {e}")
+                    return web.Response(text="PHP execution error", status=500)
+
+            else:
+                # Servir archivo estático
+                # Determinar tipo MIME
+                content_type, _ = mimetypes.guess_type(str(file_path))
+                if content_type is None:
+                    content_type = 'application/octet-stream'
+
+                # Leer y servir el archivo
+                try:
+                    async with aio_open(file_path, 'rb') as f:
+                        content = await f.read()
+
+                    # Crear respuesta
+                    response = web.Response(
+                        body=content,
+                        content_type=content_type
+                    )
+
+                    # Agregar headers de seguridad básicos
+                    if not config.get('hide_server_header', True):
+                        response.headers['Server'] = 'TechWebServer/1.0'
+
+                    return response
+
+                except IOError:
+                    return web.Response(text="Internal Server Error", status=500)
             
         except Exception as e:
             print(f"Error handling request: {e}")
@@ -103,10 +133,18 @@ class TechWebServer:
         print(f"🚀 Iniciando Tech Web Server...")
         print(f"📡 Puerto HTTP: {http_port}")
         print(f"📊 Dashboard: http://localhost:{config.get('dashboard_port', 8000)}")
+
+        # Mostrar versiones PHP disponibles
+        php_versions = php_manager.get_available_versions()
+        if php_versions:
+            print(f"🐘 PHP disponible: {', '.join(php_versions)}")
+        else:
+            print("⚠️  No hay versiones de PHP disponibles")
+
         print(f"🌐 Virtual hosts configurados:")
-        
         for vhost in config.get_virtual_hosts():
-            print(f"   - {vhost['domain']} -> {vhost['document_root']}")
+            php_info = f" (PHP {vhost.get('php_version', 'N/A')})" if vhost.get('php_enabled') else " (solo HTML)"
+            print(f"   - {vhost['domain']} -> {vhost['document_root']}{php_info}")
         
         # Crear runner
         runner = web.AppRunner(self.app)

@@ -2,6 +2,8 @@
 aiohttp==3.9.1
 aiofiles==23.2.0
 
+# FastCGI para PHP-FPM (implementación propia)
+
 # Configuración
 python-dotenv==1.0.0
 PyYAML==6.0.1
