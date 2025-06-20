@@ -247,7 +247,7 @@ class TechWebServer:
             )
 
             # Logging persistente a MongoDB (si está habilitado)
-            if config.get('logs', True):
+            if config.get('logs_enabled', True):
                 asyncio.create_task(self._log_to_mongodb(
                     request, status_code, request_type, response_time,
                     country_code, virtual_host_domain, user_agent
@@ -285,7 +285,7 @@ class TechWebServer:
     async def start_server(self):
         """Inicia el servidor web con soporte HTTP y HTTPS"""
         # Inicializar MongoDB si el logging está habilitado
-        if config.get('logs', True):
+        if config.get('logs_enabled', True):
             print("🔌 Inicializando conexión a MongoDB...")
             await mongodb_client.connect()
 
