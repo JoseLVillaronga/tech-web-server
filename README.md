@@ -1,4 +1,5 @@
 # Tech Web Server
+![ChatGPT Image 19 jun 2025, 22_11_08](https://github.com/user-attachments/assets/3445336e-fa5e-45e1-981b-07ee7960df5d)
 
 Servidor web alternativo a Apache2 construido con Python y asyncio para alta concurrencia.
 
