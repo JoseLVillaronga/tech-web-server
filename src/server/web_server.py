@@ -339,25 +339,34 @@ class TechWebServer:
         sites.append(http_site)
         print(f"✅ Servidor HTTP iniciado en http://localhost:{http_port}")
 
-        # Crear servidor HTTPS usando certificado wildcard o localhost
+        # Crear servidor HTTPS - priorizar dominios públicos
         ssl_enabled_hosts = [vhost for vhost in config.get_virtual_hosts() if vhost.get('ssl_enabled', False)]
 
         if ssl_enabled_hosts:
-            # Intentar usar certificado wildcard primero, luego localhost
+            # Buscar certificado principal (preferir dominios públicos)
             ssl_context = None
             cert_used = None
 
-            # Intentar wildcard para *.local
-            if ssl_manager.is_ssl_available('wildcard-local'):
+            # Prioridad 1: Dominios públicos (no .local, no localhost)
+            for vhost in ssl_enabled_hosts:
+                domain = vhost['domain']
+                if not domain.endswith('.local') and domain != 'localhost':
+                    if ssl_manager.is_ssl_available(domain):
+                        ssl_context = ssl_manager.get_ssl_context(domain)
+                        cert_used = domain
+                        break
+
+            # Prioridad 2: Certificado wildcard para .local
+            if not ssl_context and ssl_manager.is_ssl_available('wildcard-local'):
                 ssl_context = ssl_manager.get_ssl_context('wildcard-local')
                 cert_used = 'wildcard-local (*.local)'
 
-            # Si no hay wildcard, usar localhost
+            # Prioridad 3: localhost
             if not ssl_context and ssl_manager.is_ssl_available('localhost'):
                 ssl_context = ssl_manager.get_ssl_context('localhost')
                 cert_used = 'localhost'
 
-            # Como último recurso, usar el primer dominio disponible
+            # Prioridad 4: Cualquier certificado disponible
             if not ssl_context:
                 for vhost in ssl_enabled_hosts:
                     domain = vhost['domain']
@@ -381,7 +390,7 @@ class TechWebServer:
 
                     ssl_domains = [vhost['domain'] for vhost in ssl_enabled_hosts]
                     print(f"✅ Servidor HTTPS iniciado en puerto {https_port}")
-                    print(f"🔐 Certificado usado: {cert_used}")
+                    print(f"🔐 Certificado principal: {cert_used}")
                     print(f"🌐 Dominios SSL configurados: {', '.join(ssl_domains)}")
 
                 except Exception as e:

@@ -6,10 +6,9 @@ incluyendo la carga de certificados y configuración de contextos SSL.
 """
 
 import ssl
-import os
 import logging
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -255,6 +254,73 @@ class SSLManager:
             logger.error(f"Error obteniendo info del certificado {domain}: {e}")
             return None
     
+    def create_sni_context(self, virtual_hosts: List[Dict]) -> Optional[ssl.SSLContext]:
+        """
+        Crear contexto SSL con SNI (Server Name Indication) para múltiples dominios
+
+        Args:
+            virtual_hosts: Lista de virtual hosts con SSL habilitado
+
+        Returns:
+            Contexto SSL con SNI configurado o None si falla
+        """
+        # Pre-crear todos los contextos SSL para cada dominio
+        domain_contexts = {}
+        main_context = None
+        main_domain = None
+
+        # Crear contextos para todos los dominios disponibles
+        for vhost in virtual_hosts:
+            domain = vhost['domain']
+            if self.is_ssl_available(domain):
+                context = self.create_ssl_context(domain)
+                if context:
+                    domain_contexts[domain] = context
+                    # Usar el primer dominio público como principal
+                    if not main_context and not domain.endswith('.local') and domain != 'localhost':
+                        main_context = context
+                        main_domain = domain
+
+        # Si no hay dominio público, usar el primero disponible
+        if not main_context and domain_contexts:
+            main_domain = list(domain_contexts.keys())[0]
+            main_context = domain_contexts[main_domain]
+
+        if not main_context:
+            logger.error("❌ No se pudo crear contexto SSL principal")
+            return None
+
+        # Configurar callback SNI que selecciona el contexto correcto
+        def sni_callback(ssl_socket, server_name, ssl_context):
+            """Callback para SNI - selecciona contexto según el dominio solicitado"""
+            if server_name:
+                domain = server_name.decode('utf-8') if isinstance(server_name, bytes) else server_name
+                logger.debug(f"🔍 SNI solicitado para: {domain}")
+
+                # Buscar contexto específico para el dominio
+                if domain in domain_contexts:
+                    logger.info(f"✅ Contexto SNI encontrado para: {domain}")
+                    # Retornar el contexto específico
+                    return domain_contexts[domain]
+
+                # Buscar certificado wildcard para dominios .local
+                if domain.endswith('.local') and 'wildcard-local' in domain_contexts:
+                    logger.info(f"✅ Contexto wildcard usado para: {domain}")
+                    return domain_contexts['wildcard-local']
+
+                logger.warning(f"⚠️ No se encontró contexto específico para: {domain}, usando principal")
+
+            # Usar contexto principal por defecto
+            return None  # None significa usar el contexto principal
+
+        # Configurar SNI en el contexto principal
+        main_context.sni_callback = sni_callback
+
+        logger.info(f"🔐 Contexto SNI creado con certificado principal: {main_domain}")
+        logger.info(f"🌐 Contextos SSL creados para: {', '.join(domain_contexts.keys())}")
+
+        return main_context
+
     def cleanup_ssl_contexts(self):
         """Limpiar contextos SSL cacheados"""
         self.ssl_contexts.clear()

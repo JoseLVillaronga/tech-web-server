@@ -1,0 +1,22 @@
+# Configuración cron para renovación automática de certificados Let's Encrypt
+# Ejecuta diariamente a las 2:00 AM para verificar y renovar certificados
+
+# Variables de entorno
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Renovación diaria de certificados Let's Encrypt
+# Ejecutar a las 2:00 AM todos los días
+0 2 * * * /home/sloch/tech_web_server/scripts/letsencrypt_manager.py --dns-provider cloudflare >> /home/sloch/tech_web_server/logs/letsencrypt_cron.log 2>&1
+
+# Verificación semanal (opcional) - Domingos a las 3:00 AM
+# Ejecuta en modo dry-run para verificar que todo funcione
+0 3 * * 0 /home/sloch/tech_web_server/scripts/letsencrypt_manager.py --dry-run --dns-provider cloudflare >> /home/sloch/tech_web_server/logs/letsencrypt_weekly.log 2>&1
+
+# Limpieza de logs mensuales - Primer día del mes a las 4:00 AM
+# Mantiene solo los últimos 30 días de logs
+0 4 1 * * find /home/sloch/tech_web_server/logs -name "letsencrypt*.log" -mtime +30 -delete
+
+# Notificación de estado mensual (opcional)
+# Envía resumen del estado de certificados el primer lunes de cada mes
+# 0 8 1-7 * 1 /home/sloch/tech_web_server/scripts/cert_status_report.py

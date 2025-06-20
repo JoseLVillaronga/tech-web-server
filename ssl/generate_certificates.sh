@@ -47,7 +47,16 @@ ORG="Tech-Support"
 OU="Development"
 
 # Dominios para los certificados
-DOMAINS=("localhost" "test.local" "intranet.local" "tech-support.local")
+DEFAULT_DOMAINS=("localhost" "test.local" "intranet.local" "tech-support.local")
+
+# Si se pasan parámetros, usar esos dominios; si no, usar los por defecto
+if [ $# -gt 0 ]; then
+    DOMAINS=("$@")
+    log_info "Generando certificados para dominios específicos: ${DOMAINS[*]}"
+else
+    DOMAINS=("${DEFAULT_DOMAINS[@]}")
+    log_info "Generando certificados para dominios por defecto"
+fi
 
 # Generar CA (Certificate Authority) privada
 log_info "Generando Certificate Authority (CA) privada..."
@@ -73,7 +82,10 @@ for domain in "${DOMAINS[@]}"; do
         -subj "/C=$COUNTRY/ST=$STATE/L=$CITY/O=$ORG/OU=$OU/CN=$domain"
     
     # Crear archivo de extensiones para SAN (Subject Alternative Names)
-    cat > ${domain}.ext << EOF
+    # Diferentes configuraciones para dominios locales vs públicos
+    if [[ "$domain" == *.local ]] || [[ "$domain" == "localhost" ]]; then
+        # Configuración para dominios locales
+        cat > ${domain}.ext << EOF
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
 keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
@@ -85,6 +97,19 @@ DNS.2 = *.$domain
 IP.1 = 127.0.0.1
 IP.2 = ::1
 EOF
+    else
+        # Configuración para dominios públicos
+        cat > ${domain}.ext << EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = $domain
+DNS.2 = www.$domain
+EOF
+    fi
 
     # Generar certificado firmado por nuestra CA
     openssl x509 -req -in ${domain}.csr -CA certs/ca-cert.pem -CAkey private/ca-key.pem \
@@ -97,15 +122,16 @@ EOF
     log_success "Certificado para $domain generado"
 done
 
-# Generar certificado wildcard para desarrollo
-log_info "Generando certificado wildcard para *.local..."
+# Generar certificado wildcard solo si estamos usando dominios por defecto
+if [ $# -eq 0 ]; then
+    log_info "Generando certificado wildcard para *.local..."
 
-openssl genrsa -out private/wildcard-local-key.pem $KEY_SIZE
+    openssl genrsa -out private/wildcard-local-key.pem $KEY_SIZE
 
-openssl req -new -key private/wildcard-local-key.pem -out wildcard-local.csr \
-    -subj "/C=$COUNTRY/ST=$STATE/L=$CITY/O=$ORG/OU=$OU/CN=*.local"
+    openssl req -new -key private/wildcard-local-key.pem -out wildcard-local.csr \
+        -subj "/C=$COUNTRY/ST=$STATE/L=$CITY/O=$ORG/OU=$OU/CN=*.local"
 
-cat > wildcard-local.ext << EOF
+    cat > wildcard-local.ext << EOF
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
 keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
@@ -118,13 +144,14 @@ IP.1 = 127.0.0.1
 IP.2 = ::1
 EOF
 
-openssl x509 -req -in wildcard-local.csr -CA certs/ca-cert.pem -CAkey private/ca-key.pem \
-    -CAcreateserial -out certs/wildcard-local-cert.pem -days $DAYS \
-    -extfile wildcard-local.ext
+    openssl x509 -req -in wildcard-local.csr -CA certs/ca-cert.pem -CAkey private/ca-key.pem \
+        -CAcreateserial -out certs/wildcard-local-cert.pem -days $DAYS \
+        -extfile wildcard-local.ext
 
-rm wildcard-local.csr wildcard-local.ext
+    rm wildcard-local.csr wildcard-local.ext
 
-log_success "Certificado wildcard generado"
+    log_success "Certificado wildcard generado"
+fi
 
 # Establecer permisos seguros
 chmod 600 private/*.pem

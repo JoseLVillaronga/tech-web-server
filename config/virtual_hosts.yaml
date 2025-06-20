@@ -34,3 +34,12 @@ virtual_hosts:
     php_enabled: true
     php_version: "8.3"
     php_pool: "www"
+
+  - domain: "ogolfen.z-sur.com.ar"
+    port: 3080
+    document_root: "./public/tech-support"
+    ssl_enabled: true
+    ssl_redirect: true
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
