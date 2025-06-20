@@ -17,9 +17,9 @@ virtual_hosts:
     php_version: "8.3"
     php_pool: "www"
 
-  - domain: "tech-support.local"
+  - domain: "intranet2.local"
     port: 3080
-    document_root: "./public/tech-support"
+    document_root: "./public/intranet2"
     ssl_enabled: true
     ssl_redirect: true
     php_enabled: true

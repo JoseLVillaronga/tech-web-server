@@ -97,4 +97,6 @@ config/*.local
 .pytest_cache/
 .coverage
 htmlcov/
-public/*
+public/intranet
+public/tech-support
+public/intranet2
