@@ -10,6 +10,7 @@ env/
 ENV/
 .venv/
 .env/
+.gitignore
 
 # Python
 __pycache__/
@@ -96,3 +97,4 @@ config/*.local
 .pytest_cache/
 .coverage
 htmlcov/
+public/*
