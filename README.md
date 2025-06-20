@@ -67,7 +67,9 @@ Servidor web alternativo a Apache2 construido con Python y asyncio para alta con
 - [x] Configuración SSL por virtual host
 - [x] Redirección automática HTTP → HTTPS
 - [x] Gestión de certificados SSL
-- [ ] Integración Let's Encrypt para producción
+- [x] Integración Let's Encrypt para producción
+- [x] Renovación automática de certificados
+- [x] Verificación DNS para puertos no estándar
 
 ### 🔄 En Desarrollo
 
@@ -327,7 +329,7 @@ tech-web-server/
 ### 🔧 Configuración y Administración
 - [Configuración inicial](docs/setup.md)
 - [Configuración de virtual hosts](docs/virtual-hosts.md)
-- [Configuración SSL](docs/ssl-setup.md)
+- [**🔐 Certificados SSL/Let's Encrypt**](docs/SSL_CERTIFICATES_GUIDE.md) - Guía completa de SSL
 - [Sistema de logging](docs/logging-system.md)
 - [Dashboard de administración](docs/dashboard.md)
 - [Instalación como servicio](docs/service-installation.md)
