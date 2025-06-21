@@ -32,7 +32,7 @@ virtual_hosts:
     ssl_enabled: true
     ssl_redirect: true
     php_enabled: true
-    php_version: "8.3"
+    php_version: "7.4"
     php_pool: "www"
 
   - domain: "ogolfen.z-sur.com.ar"

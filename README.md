@@ -9,6 +9,7 @@ Servidor web alternativo a Apache2 construido con Python y asyncio para alta con
 - **Virtual hosts** con configuración independiente
 - **Soporte PHP-FPM** con múltiples versiones
 - **Certificados SSL/TLS** (Let's Encrypt)
+- **Soporte proxy reverso** (Caddy, Nginx, Cloudflare)
 - **Logging avanzado** con geolocalización
 - **Dashboard web** de administración
 - **Compresión** gzip/brotli
@@ -76,9 +77,11 @@ Servidor web alternativo a Apache2 construido con Python y asyncio para alta con
 
 #### 7. Funcionalidades Avanzadas
 - [x] Compresión gzip/brotli
+- [x] Soporte proxy reverso (Caddy, Nginx, Cloudflare)
+- [x] Detección de IP real del cliente
+- [x] Geolocalización con IPs reales
 - [ ] Rate limiting
 - [ ] Headers de seguridad avanzados
-- [ ] Proxy reverso básico
 - [ ] WebSocket support
 
 ## 🎯 Estado Actual del Sistema
@@ -91,6 +94,7 @@ El servidor web está **100% operativo** con todas las funcionalidades principal
 - **🐘 PHP-FPM**: Soporte completo para múltiples versiones (7.1, 7.4, 8.2, 8.3, 8.4)
 - **🌐 Virtual Hosts**: Configuración independiente por dominio
 - **🔐 SSL/HTTPS**: Certificados auto-firmados con redirección automática
+- **🔄 Proxy Reverso**: Compatible con Caddy, Nginx, Cloudflare (IPs reales)
 - **📊 Dashboard**: Interfaz web con estadísticas y paginación inteligente
 - **📝 Logging**: Sistema dual (memoria + MongoDB) con geolocalización
 - **🗄️ MongoDB**: Base de datos persistente con índices optimizados
@@ -169,6 +173,9 @@ DASHBOARD_BIND_IP=0.0.0.0
 # Logging
 LOGS=true
 LOG_FILE_PATH=/var/log/webserver/access.log
+
+# Proxy Reverso
+PROXY_SUPPORT_ENABLED=true
 
 # MongoDB (para logging persistente)
 mongo_host=localhost
@@ -331,6 +338,7 @@ tech-web-server/
 - [Configuración inicial](docs/setup.md)
 - [Configuración de virtual hosts](docs/virtual-hosts.md)
 - [**🔐 Certificados SSL/Let's Encrypt**](docs/SSL_CERTIFICATES_GUIDE.md) - Guía completa de SSL
+- [**🔄 Soporte Proxy Reverso**](docs/REVERSE_PROXY_SUPPORT.md) - Caddy, Nginx, Cloudflare
 - [Sistema de logging](docs/logging-system.md)
 - [Dashboard de administración](docs/dashboard.md)
 - [Instalación como servicio](docs/service-installation.md)

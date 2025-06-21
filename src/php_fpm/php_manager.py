@@ -64,7 +64,48 @@ class PHPManager:
         
         return headers, content
     
-    def _build_fcgi_params(self, request, vhost: Dict, script_path: str, 
+    def _get_real_client_ip(self, request) -> str:
+        """Obtiene la IP real del cliente considerando headers de proxy"""
+        # Verificar si está habilitado el soporte de proxy
+        if not config.get('proxy_support_enabled', True):
+            return request.remote or '127.0.0.1'
+
+        # Lista de headers de proxy en orden de prioridad
+        proxy_headers = [
+            'X-Forwarded-For',
+            'X-Real-IP',
+            'X-Client-IP',
+            'CF-Connecting-IP',  # Cloudflare
+            'True-Client-IP',    # Akamai
+        ]
+
+        # Buscar IP en headers de proxy
+        for header in proxy_headers:
+            if header in request.headers:
+                ip_value = request.headers[header].strip()
+                if ip_value:
+                    # X-Forwarded-For puede contener múltiples IPs separadas por comas
+                    # La primera es la IP original del cliente
+                    if ',' in ip_value:
+                        ip_value = ip_value.split(',')[0].strip()
+
+                    # Validar que sea una IP válida
+                    if self._is_valid_ip(ip_value):
+                        return ip_value
+
+        # Si no se encuentra en headers de proxy, usar la IP directa
+        return request.remote or '127.0.0.1'
+
+    def _is_valid_ip(self, ip: str) -> bool:
+        """Valida si una cadena es una dirección IP válida"""
+        try:
+            import ipaddress
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError:
+            return False
+
+    def _build_fcgi_params(self, request, vhost: Dict, script_path: str,
                           query_string: str = '') -> Dict[str, str]:
         """Construye parámetros FastCGI desde el request HTTP"""
         
@@ -75,9 +116,26 @@ class PHPManager:
             cgi_name = f"HTTP_{header_name.upper().replace('-', '_')}"
             params[cgi_name] = header_value
         
+        # Calcular SCRIPT_NAME basado en REQUEST_URI y document_root
+        request_path = request.path.lstrip('/')
+        if not request_path:
+            # Si es la raíz, usar el archivo index que se detectó
+            script_name = '/index.php'  # Por defecto, se ajustará si es .html
+            script_file = Path(script_path)
+            if script_file.name.startswith('index.'):
+                script_name = f'/{script_file.name}'
+        else:
+            # Para otros archivos, usar la ruta relativa al document_root
+            script_name = f'/{request_path}'
+
+        # Detectar si es HTTPS basado en el esquema del request
+        is_https = request.scheme == 'https'
+
         # Parámetros básicos
         params.update({
             'SCRIPT_FILENAME': script_path,
+            'SCRIPT_NAME': script_name,
+            'PHP_SELF': script_name,  # PHP_SELF es igual a SCRIPT_NAME en la mayoría de casos
             'REQUEST_METHOD': request.method,
             'REQUEST_URI': request.path_qs,
             'QUERY_STRING': query_string,
@@ -86,12 +144,19 @@ class PHPManager:
             'SERVER_SOFTWARE': 'TechWebServer/1.0',
             'SERVER_NAME': vhost.get('domain', 'localhost'),
             'SERVER_PORT': str(vhost.get('port', 3080)),
-            'REMOTE_ADDR': request.remote or '127.0.0.1',
+            'REMOTE_ADDR': self._get_real_client_ip(request),
+            'REMOTE_HOST': '',  # Reverse DNS lookup no implementado por rendimiento
+            'REMOTE_PORT': '',  # Puerto del cliente no disponible en aiohttp
+            'SERVER_ADDR': '127.0.0.1',  # IP del servidor (simplificado)
             'GATEWAY_INTERFACE': 'CGI/1.1',
             'SERVER_PROTOCOL': 'HTTP/1.1',
             'REDIRECT_STATUS': '200',
             'DOCUMENT_ROOT': str(Path(vhost['document_root']).resolve()),
         })
+
+        # Agregar HTTPS si es conexión segura
+        if is_https:
+            params['HTTPS'] = 'on'
         
         return params
     
@@ -108,10 +173,11 @@ class PHPManager:
             return 404, {'content-type': 'text/plain'}, b'PHP file not found'
         
         try:
-            # Separar query string
+            # Separar query string (siempre debe estar definido, aunque sea vacío)
             query_string = ''
             if '?' in request.path_qs:
                 query_string = request.path_qs.split('?', 1)[1]
+            # Asegurar que query_string nunca sea None
             
             # Construir parámetros FastCGI
             fcgi_params = self._build_fcgi_params(request, vhost, str(file_path), query_string)

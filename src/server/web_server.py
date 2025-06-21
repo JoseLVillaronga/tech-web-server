@@ -27,6 +27,47 @@ class TechWebServer:
         """Configura las rutas del servidor"""
         # Ruta catch-all para manejar todos los requests
         self.app.router.add_route('*', '/{path:.*}', self.handle_request)
+
+    def _get_real_client_ip(self, request: web_request.Request) -> str:
+        """Obtiene la IP real del cliente considerando headers de proxy"""
+        # Verificar si está habilitado el soporte de proxy
+        if not config.get('proxy_support_enabled', True):
+            return request.remote or '127.0.0.1'
+
+        # Lista de headers de proxy en orden de prioridad
+        proxy_headers = [
+            'X-Forwarded-For',
+            'X-Real-IP',
+            'X-Client-IP',
+            'CF-Connecting-IP',  # Cloudflare
+            'True-Client-IP',    # Akamai
+        ]
+
+        # Buscar IP en headers de proxy
+        for header in proxy_headers:
+            if header in request.headers:
+                ip_value = request.headers[header].strip()
+                if ip_value:
+                    # X-Forwarded-For puede contener múltiples IPs separadas por comas
+                    # La primera es la IP original del cliente
+                    if ',' in ip_value:
+                        ip_value = ip_value.split(',')[0].strip()
+
+                    # Validar que sea una IP válida
+                    if self._is_valid_ip(ip_value):
+                        return ip_value
+
+        # Si no se encuentra en headers de proxy, usar la IP directa
+        return request.remote or '127.0.0.1'
+
+    def _is_valid_ip(self, ip: str) -> bool:
+        """Valida si una cadena es una dirección IP válida"""
+        try:
+            import ipaddress
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError:
+            return False
     
     async def handle_request(self, request: web_request.Request) -> web.Response:
         """Maneja todas las peticiones HTTP"""
@@ -129,10 +170,16 @@ class TechWebServer:
                         status=status
                     )
 
-                    # Agregar headers de PHP
+                    # Agregar headers de PHP con corrección de redirecciones
                     for header_name, header_value in headers.items():
                         if header_name.lower() != 'status':
-                            response.headers[header_name] = header_value
+                            # Corregir redirecciones Location para incluir puerto personalizado
+                            if header_name.lower() == 'location':
+                                header_value = self._fix_redirect_location(header_value, request, vhost)
+                                # Usar el nombre correcto del header para Location
+                                response.headers['Location'] = header_value
+                            else:
+                                response.headers[header_name] = header_value
 
                     # Agregar headers de seguridad básicos
                     if not config.get('hide_server_header', True):
@@ -220,11 +267,50 @@ class TechWebServer:
 
         return response
 
+    def _fix_redirect_location(self, location: str, request: web_request.Request, vhost: dict) -> str:
+        """Corrige redirecciones Location para incluir puerto personalizado cuando sea necesario"""
+        # Si ya es una URL absoluta, no modificar
+        if location.startswith(('http://', 'https://')):
+            return location
+
+        # Obtener el esquema actual
+        scheme = request.scheme
+
+        # Obtener el host sin puerto
+        host = request.headers.get('Host', vhost['domain']).split(':')[0]
+
+        # Determinar el puerto correcto según el esquema
+        if scheme == 'https':
+            port = config.get('default_https_port', 3453)
+            # Si es puerto estándar HTTPS (443), no incluirlo
+            if port == 443:
+                base_url = f"https://{host}"
+            else:
+                base_url = f"https://{host}:{port}"
+        else:
+            port = config.get('default_http_port', 3080)
+            # Si es puerto estándar HTTP (80), no incluirlo
+            if port == 80:
+                base_url = f"http://{host}"
+            else:
+                base_url = f"http://{host}:{port}"
+
+        # Manejar casos especiales
+        if location == '' or location is None:
+            # Redirección vacía = ir a la raíz
+            return f"{base_url}/"
+        elif location.startswith('/'):
+            # Ruta absoluta
+            return f"{base_url}{location}"
+        else:
+            # Para redirecciones relativas sin barra inicial
+            return f"{base_url}/{location}"
+
     def _log_request(self, request: web_request.Request, status_code: int,
                     request_type: str, start_time: float, vhost: dict = None):
         """Registra estadísticas de la request"""
         try:
-            ip = request.remote or '127.0.0.1'
+            ip = self._get_real_client_ip(request)
             user_agent = request.headers.get('User-Agent', '')
             path = request.path
             response_time = time.time() - start_time
@@ -262,7 +348,7 @@ class TechWebServer:
         """Registra la request en MongoDB de forma asíncrona"""
         try:
             request_data = {
-                'ip': request.remote or '127.0.0.1',
+                'ip': self._get_real_client_ip(request),
                 'country_code': country_code,
                 'method': request.method,
                 'path': request.path,

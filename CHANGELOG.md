@@ -5,6 +5,60 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-06-21 - ✅ COMPLETADO
+
+### Agregado
+- **Soporte completo para proxy reverso**
+  - Función `_get_real_client_ip()` en servidor web (`src/server/web_server.py`)
+  - Función `_get_real_client_ip()` en PHP manager (`src/php_fpm/php_manager.py`)
+  - Detección automática de IP real del cliente
+  - Soporte para múltiples headers de proxy: `X-Forwarded-For`, `X-Real-IP`, `X-Client-IP`, `CF-Connecting-IP`, `True-Client-IP`
+  - Validación de IPs para seguridad
+  - Configuración habilitación/deshabilitación (`PROXY_SUPPORT_ENABLED`)
+
+- **Geolocalización con IPs reales**
+  - Modificación en `config.php` para forzar actualización de país
+  - Detección de cambios de IP del cliente
+  - Actualización automática cuando país es `ZZ` (desconocido)
+  - Tracking de IP por sesión (`$_SESSION['lastIP']`)
+
+- **Documentación completa**
+  - Guía detallada de proxy reverso (`docs/REVERSE_PROXY_SUPPORT.md`)
+  - Ejemplos de configuración para Caddy, Nginx, Cloudflare
+  - Casos de prueba y troubleshooting
+  - Actualización del README principal
+
+### Mejorado
+- **Compatibilidad con Caddy**
+  - Integración perfecta con Caddy como proxy reverso
+  - Headers `X-Forwarded-For` procesados correctamente
+  - IPs reales pasadas a aplicaciones PHP
+
+- **Sistema de logging**
+  - Logs ahora muestran IPs reales de clientes
+  - Geolocalización funcional con códigos de país correctos
+  - Estadísticas precisas por país en dashboard
+
+- **Aplicaciones PHP**
+  - Variable `$_SERVER['REMOTE_ADDR']` contiene IP real
+  - Clase `Visitas` registra IPs y países correctos
+  - Librería `geoiploc.php` funciona con IPs reales
+
+### Probado
+- ✅ Caddy + Tech Web Server funcionando perfectamente
+- ✅ IPs reales detectadas: `191.85.12.36`, `70.171.207.63`
+- ✅ Países correctos: `AR` (Argentina), `US` (Estados Unidos)
+- ✅ Dashboard muestra estadísticas reales
+- ✅ Geolocalización funcional al 100%
+- ✅ Aplicaciones PHP reciben IPs reales
+
+### Beneficios
+- 📈 **Analytics precisos** - Estadísticas reales de visitantes por país
+- 🔒 **Seguridad mejorada** - Logs de seguridad con IPs reales
+- 🌍 **Geolocalización correcta** - Contenido personalizado por ubicación
+- 📊 **Dashboard útil** - Métricas reales de tráfico internacional
+- 🔧 **Compatibilidad total** - Funciona con infraestructura moderna
+
 ## [0.2.0] - 2025-06-19
 
 ### Agregado
