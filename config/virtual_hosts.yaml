@@ -1,9 +1,9 @@
 virtual_hosts:
   - domain: "localhost"
     port: 3080
-    document_root: "./public"
-    ssl_enabled: true
-    ssl_redirect: true
+    document_root: "./public/tech-support"
+    ssl_enabled: false
+    ssl_redirect: false
     php_enabled: true
     php_version: "8.3"
     php_pool: "www"
@@ -11,8 +11,8 @@ virtual_hosts:
   - domain: "test.local"
     port: 3080
     document_root: "./public/tech-support"
-    ssl_enabled: true
-    ssl_redirect: true
+    ssl_enabled: false
+    ssl_redirect: false
     php_enabled: true
     php_version: "8.3"
     php_pool: "www"
