@@ -5,6 +5,67 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-06-24 - ✅ COMPLETADO
+
+### Agregado
+- **Modo Multi-Puerto HTTP (`SSL_ENABLED=false`)**
+  - Múltiples servidores HTTP en puertos específicos por virtual host
+  - Routing inteligente por `(Host, Port)` en lugar de solo `Host`
+  - Configuración `SSL_ENABLED=true/false` en `.env` para control global
+  - Método `get_unique_http_ports()` en ConfigManager
+  - Método `get_virtual_host_by_domain_and_port()` para routing multi-puerto
+
+- **Optimización para Proxy Reverso**
+  - Deshabilitación automática de HTTPS cuando `SSL_ENABLED=false`
+  - Máximo rendimiento sin overhead SSL interno
+  - Ideal para uso detrás de Caddy, Nginx, Cloudflare
+  - Cada virtual host puede tener puerto dedicado
+
+- **Documentación completa**
+  - Guía específica de Multi-Puerto (`docs/MULTI_PORT_CONFIGURATION.md`)
+  - Actualización de guía de Proxy Reverso (`docs/REVERSE_PROXY_SUPPORT.md`)
+  - Ejemplos de configuración con Caddy
+  - Casos de uso: hosting multi-cliente, microservicios, multi-región
+
+### Mejorado
+- **Lógica de inicio de servidores**
+  - Creación condicional de servidores HTTP según modo
+  - Información detallada de puertos activos al iniciar
+  - Validación automática de configuración multi-puerto
+
+- **Sistema de routing**
+  - Detección automática de puerto del servidor desde request
+  - Fallback inteligente al routing tradicional por Host
+  - Compatibilidad 100% con configuraciones existentes
+
+- **Configuración flexible**
+  - Campo `port` en virtual_hosts.yaml ahora funcional
+  - Soporte para puertos compartidos y dedicados
+  - Validación de configuración SSL vs Multi-Puerto
+
+### Probado
+- ✅ **Modo SSL (`SSL_ENABLED=true`)**: Comportamiento tradicional preservado
+- ✅ **Modo Multi-Puerto (`SSL_ENABLED=false`)**: Múltiples puertos HTTP funcionando
+- ✅ **Puerto 3080**: `localhost` y `test.local` (compartido)
+- ✅ **Puerto 3090**: `admin.local` (dedicado)
+- ✅ **Puerto 3091**: `api.local` (dedicado)
+- ✅ **HTTPS deshabilitado**: Correctamente cuando SSL_ENABLED=false
+- ✅ **Routing inteligente**: Por (Host, Port) funcionando
+- ✅ **Compatibilidad Caddy**: Proxy reverso funcionando perfectamente
+
+### Casos de Uso Validados
+- 🏢 **Hosting Multi-Cliente**: Cada cliente en puerto dedicado
+- 🔧 **Microservicios**: API, admin, frontend en puertos separados
+- 🌍 **Multi-Región**: Servicios por región en puertos específicos
+- ⚡ **Alto Rendimiento**: Sin overhead SSL, máxima velocidad PHP-FPM
+
+### Beneficios
+- 🚀 **Performance**: Sin SSL interno = máximo rendimiento
+- 🔧 **Flexibilidad**: Versiones PHP diferentes por puerto
+- 🛡️ **Seguridad**: Tech Web Server solo localhost, Caddy expuesto
+- 📊 **Aislamiento**: Cada servicio completamente independiente
+- 🔄 **Escalabilidad**: Fácil agregar nuevos servicios/puertos
+
 ## [0.6.0] - 2025-06-21 - ✅ COMPLETADO
 
 ### Agregado

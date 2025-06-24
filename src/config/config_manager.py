@@ -30,6 +30,7 @@ class ConfigManager:
             'dashboard_port': int(os.getenv('PORT', 8000)),
             'max_concurrent_connections': int(os.getenv('MAX_CONCURRENT_CONNECTIONS', 300)),
             'compression_enabled': os.getenv('COMPRESSION_ENABLED', 'true').lower() == 'true',
+            'ssl_enabled': os.getenv('SSL_ENABLED', 'true').lower() == 'true',
             'default_http_port': int(os.getenv('DEFAULT_HTTP_PORT', 3080)),
             'default_https_port': int(os.getenv('DEFAULT_HTTPS_PORT', 3453)),
             
@@ -89,6 +90,27 @@ class ConfigManager:
             if vhost.get('domain') == domain:
                 return vhost
         return None
+
+    def get_virtual_host_by_domain_and_port(self, domain: str, port: int) -> Optional[Dict[str, Any]]:
+        """Obtiene un virtual host por dominio y puerto (para modo multi-puerto)"""
+        for vhost in self._virtual_hosts:
+            if vhost.get('domain') == domain and vhost.get('port') == port:
+                return vhost
+        return None
+
+    def get_unique_http_ports(self) -> List[int]:
+        """Obtiene lista de puertos HTTP únicos cuando SSL_ENABLED=false"""
+        if self.get('ssl_enabled', True):
+            # Modo SSL habilitado: usar puerto por defecto
+            return [self.get('default_http_port', 3080)]
+
+        # Modo multi-puerto: obtener puertos únicos de virtual hosts
+        ports = set()
+        for vhost in self._virtual_hosts:
+            port = vhost.get('port', self.get('default_http_port', 3080))
+            ports.add(port)
+
+        return sorted(list(ports))
     
     def reload(self):
         """Recarga la configuración"""

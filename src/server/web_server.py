@@ -78,7 +78,19 @@ class TechWebServer:
             host = request.headers.get('Host', 'localhost').split(':')[0]
 
             # Buscar virtual host correspondiente
-            vhost = config.get_virtual_host_by_domain(host)
+            vhost = None
+
+            # Si SSL está deshabilitado, usar routing por (dominio, puerto)
+            if not config.get('ssl_enabled', True):
+                # Obtener puerto del servidor desde el request
+                server_port = request.transport.get_extra_info('sockname')[1] if request.transport else None
+                if server_port:
+                    vhost = config.get_virtual_host_by_domain_and_port(host, server_port)
+
+            # Fallback al método tradicional (solo por dominio)
+            if not vhost:
+                vhost = config.get_virtual_host_by_domain(host)
+
             if not vhost:
                 # Si no se encuentra, usar el primer virtual host como default
                 virtual_hosts = config.get_virtual_hosts()
@@ -375,12 +387,21 @@ class TechWebServer:
             print("🔌 Inicializando conexión a MongoDB...")
             await mongodb_client.connect()
 
+        ssl_enabled = config.get('ssl_enabled', True)
         http_port = config.get('default_http_port', 3080)
         https_port = config.get('default_https_port', 3453)
 
         print(f"🚀 Iniciando Tech Web Server...")
-        print(f"📡 Puerto HTTP: {http_port}")
-        print(f"🔐 Puerto HTTPS: {https_port}")
+
+        if ssl_enabled:
+            print(f"🔐 Modo SSL habilitado")
+            print(f"📡 Puerto HTTP: {http_port}")
+            print(f"🔐 Puerto HTTPS: {https_port}")
+        else:
+            print(f"⚡ Modo multi-puerto HTTP (SSL deshabilitado)")
+            http_ports = config.get_unique_http_ports()
+            print(f"📡 Puertos HTTP: {', '.join(map(str, http_ports))}")
+
         print(f"📊 Dashboard: http://localhost:{config.get('dashboard_port', 8000)}")
 
         # Mostrar versiones PHP disponibles
@@ -413,20 +434,40 @@ class TechWebServer:
         # Lista para almacenar todos los sites
         sites = []
 
-        # Crear site HTTP
-        http_site = web.TCPSite(
-            runner,
-            '0.0.0.0',
-            http_port,
-            backlog=config.get('max_concurrent_connections', 300)
-        )
+        # Crear servidores HTTP
+        if ssl_enabled:
+            # Modo tradicional: un solo servidor HTTP
+            http_site = web.TCPSite(
+                runner,
+                '0.0.0.0',
+                http_port,
+                backlog=config.get('max_concurrent_connections', 300)
+            )
+            await http_site.start()
+            sites.append(http_site)
+            print(f"✅ Servidor HTTP iniciado en http://localhost:{http_port}")
+        else:
+            # Modo multi-puerto: crear servidor por cada puerto único
+            http_ports = config.get_unique_http_ports()
+            for port in http_ports:
+                http_site = web.TCPSite(
+                    runner,
+                    '0.0.0.0',
+                    port,
+                    backlog=config.get('max_concurrent_connections', 300)
+                )
+                await http_site.start()
+                sites.append(http_site)
+                print(f"✅ Servidor HTTP iniciado en http://localhost:{port}")
 
-        await http_site.start()
-        sites.append(http_site)
-        print(f"✅ Servidor HTTP iniciado en http://localhost:{http_port}")
+            print(f"🌐 Total servidores HTTP: {len(http_ports)}")
 
-        # Crear servidor HTTPS - priorizar dominios públicos
-        ssl_enabled_hosts = [vhost for vhost in config.get_virtual_hosts() if vhost.get('ssl_enabled', False)]
+        # Crear servidor HTTPS solo si SSL está habilitado globalmente
+        if ssl_enabled:
+            ssl_enabled_hosts = [vhost for vhost in config.get_virtual_hosts() if vhost.get('ssl_enabled', False)]
+        else:
+            ssl_enabled_hosts = []
+            print("ℹ️  Servidor HTTPS deshabilitado (SSL_ENABLED=false)")
 
         if ssl_enabled_hosts:
             # Buscar certificado principal (preferir dominios públicos)

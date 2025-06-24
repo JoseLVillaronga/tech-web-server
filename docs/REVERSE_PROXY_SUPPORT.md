@@ -15,9 +15,28 @@ Tech Web Server incluye soporte completo para funcionar detrás de proxies rever
 
 ### Archivo `.env`
 ```env
-# Soporte para proxy reverso (Caddy, Nginx, etc.)
-PROXY_SUPPORT_ENABLED=true
+# Control de SSL y modo de operación
+SSL_ENABLED=false                    # false = Multi-puerto HTTP, true = SSL tradicional
+PROXY_SUPPORT_ENABLED=true          # Soporte para proxy reverso (Caddy, Nginx, etc.)
+
+# Puertos por defecto (cuando SSL_ENABLED=true)
+DEFAULT_HTTP_PORT=3080
+DEFAULT_HTTPS_PORT=3453
 ```
+
+### Modos de Operación
+
+#### **🔐 Modo SSL (`SSL_ENABLED=true`)**
+- Comportamiento tradicional
+- Un servidor HTTP en `DEFAULT_HTTP_PORT`
+- Un servidor HTTPS en `DEFAULT_HTTPS_PORT`
+- Routing por header `Host` únicamente
+
+#### **⚡ Modo Multi-Puerto (`SSL_ENABLED=false`)**
+- Múltiples servidores HTTP en puertos específicos
+- Sin servidor HTTPS (Caddy maneja SSL)
+- Routing por `(Host, Port)` inteligente
+- Cada virtual host puede tener su puerto dedicado
 
 ### Headers Soportados (en orden de prioridad)
 1. `X-Forwarded-For` - Estándar más común
@@ -26,12 +45,60 @@ PROXY_SUPPORT_ENABLED=true
 4. `CF-Connecting-IP` - Cloudflare
 5. `True-Client-IP` - Akamai
 
+### Virtual Hosts Multi-Puerto (`virtual_hosts.yaml`)
+```yaml
+virtual_hosts:
+  # Puerto estándar (compartido)
+  - domain: "localhost"
+    port: 3080
+    document_root: "./public/main"
+    ssl_enabled: false      # Requerido para multi-puerto
+    ssl_redirect: false     # Requerido para multi-puerto
+    php_enabled: true
+    php_version: "8.3"
+
+  # Puerto dedicado para admin
+  - domain: "admin.local"
+    port: 3090
+    document_root: "./public/admin"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.3"
+
+  # Puerto dedicado para API
+  - domain: "api.local"
+    port: 3091
+    document_root: "./public/api"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.4"
+```
+
 ## 🌐 Configuración de Caddy
 
-### Ejemplo de Caddyfile
+### Ejemplo Multi-Puerto con Caddy
 ```caddy
-tech-support.com.ar {
+# Sitio principal
+mysite.com {
     reverse_proxy localhost:3080 {
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Real-IP {remote_host}
+    }
+}
+
+# Panel de administración
+admin.mysite.com {
+    reverse_proxy localhost:3090 {
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Real-IP {remote_host}
+    }
+}
+
+# API microservice
+api.mysite.com {
+    reverse_proxy localhost:3091 {
         header_up X-Forwarded-For {remote_host}
         header_up X-Real-IP {remote_host}
     }
@@ -88,17 +155,21 @@ La IP real se pasa a PHP a través de la variable `REMOTE_ADDR`:
 
 ## 📊 Beneficios
 
-### Antes del Soporte de Proxy Reverso
-- ❌ Todas las IPs: `127.0.0.1`
+### Antes del Soporte Multi-Puerto
+- ❌ Un solo puerto HTTP/HTTPS
+- ❌ Routing solo por header Host
+- ❌ SSL obligatorio para múltiples sitios
+- ❌ Todas las IPs: `127.0.0.1` (proxy)
 - ❌ Todos los países: `ZZ` (desconocido)
-- ❌ Estadísticas incorrectas
-- ❌ Geolocalización inútil
 
-### Después del Soporte de Proxy Reverso
-- ✅ IPs reales: `191.85.12.36`, `70.171.207.63`, etc.
-- ✅ Países correctos: `AR`, `US`, `BR`, etc.
-- ✅ Estadísticas precisas
-- ✅ Geolocalización funcional
+### Después del Soporte Multi-Puerto + Proxy Reverso
+- ✅ **Múltiples puertos HTTP:** 3080, 3090, 3091, etc.
+- ✅ **Routing inteligente:** Por (Host, Port)
+- ✅ **Sin SSL interno:** Caddy maneja certificados
+- ✅ **IPs reales:** `191.85.12.36`, `70.171.207.63`, etc.
+- ✅ **Países correctos:** `AR`, `US`, `BR`, etc.
+- ✅ **Aislamiento perfecto:** Cada sitio en su puerto
+- ✅ **Máximo rendimiento:** Sin overhead SSL interno
 
 ## 🔒 Seguridad
 
@@ -115,21 +186,30 @@ La IP real se pasa a PHP a través de la variable `REMOTE_ADDR`:
 
 ## 🧪 Testing
 
-### Verificar Funcionamiento
+### Verificar Funcionamiento Multi-Puerto
 ```bash
-# Ver headers recibidos
-curl -H "X-Forwarded-For: 192.168.1.100" http://localhost:3080/
+# Probar puerto estándar
+curl http://localhost:3080/
+curl -H "Host: test.local" http://localhost:3080/
 
-# Verificar logs del dashboard
-# Las IPs deberían mostrar valores reales, no 127.0.0.1
+# Probar puertos dedicados
+curl -H "Host: admin.local" http://localhost:3090/
+curl -H "Host: api.local" http://localhost:3091/
+
+# Verificar que HTTPS está deshabilitado
+curl -k https://localhost:3453/ || echo "HTTPS correctamente deshabilitado"
+
+# Ver headers recibidos con proxy
+curl -H "X-Forwarded-For: 192.168.1.100" http://localhost:3080/
 ```
 
 ### Casos de Prueba
-1. **Con proxy:** IP real en headers → Debe usar IP real
-2. **Sin proxy:** Conexión directa → Debe usar IP directa  
-3. **Headers inválidos:** IP malformada → Debe usar IP directa
-4. **Múltiples IPs:** Lista separada por comas → Debe usar primera IP
-5. **Deshabilitado:** `PROXY_SUPPORT_ENABLED=false` → Debe usar IP directa
+1. **SSL_ENABLED=true:** Modo tradicional → Un puerto HTTP + HTTPS
+2. **SSL_ENABLED=false:** Modo multi-puerto → Múltiples puertos HTTP
+3. **Routing por puerto:** Mismo dominio en diferentes puertos → Sitios diferentes
+4. **Proxy headers:** IP real en headers → Debe usar IP real
+5. **Sin proxy:** Conexión directa → Debe usar IP directa
+6. **Headers inválidos:** IP malformada → Debe usar IP directa
 
 ## 🔧 Troubleshooting
 

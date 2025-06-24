@@ -1,4 +1,5 @@
 virtual_hosts:
+  # Sitio principal en puerto estándar
   - domain: "localhost"
     port: 3080
     document_root: "./public/tech-support"
@@ -8,6 +9,7 @@ virtual_hosts:
     php_version: "8.3"
     php_pool: "www"
 
+  # Mismo puerto que localhost (compartido)
   - domain: "test.local"
     port: 3080
     document_root: "./public/tech-support"
@@ -17,20 +19,22 @@ virtual_hosts:
     php_version: "8.3"
     php_pool: "www"
 
-  - domain: "intranet2.local"
-    port: 3080
+  # Puerto específico para admin (solo cuando SSL_ENABLED=false)
+  - domain: "admin.local"
+    port: 3090
     document_root: "./public/intranet2"
-    ssl_enabled: true
-    ssl_redirect: true
+    ssl_enabled: false
+    ssl_redirect: false
     php_enabled: true
     php_version: "8.3"
     php_pool: "www"
 
-  - domain: "intranet.local"
-    port: 3080
+  # Puerto específico para API (solo cuando SSL_ENABLED=false)
+  - domain: "api.local"
+    port: 3091
     document_root: "./public/intranet"
-    ssl_enabled: true
-    ssl_redirect: true
+    ssl_enabled: false
+    ssl_redirect: false
     php_enabled: true
     php_version: "7.4"
     php_pool: "www"

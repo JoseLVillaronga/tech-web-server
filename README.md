@@ -9,6 +9,7 @@ Servidor web alternativo a Apache2 construido con Python y asyncio para alta con
 - **Virtual hosts** con configuración independiente
 - **Soporte PHP-FPM** con múltiples versiones
 - **Certificados SSL/TLS** (Let's Encrypt)
+- **Modo multi-puerto HTTP** para máximo rendimiento
 - **Soporte proxy reverso** (Caddy, Nginx, Cloudflare)
 - **Logging avanzado** con geolocalización
 - **Dashboard web** de administración
@@ -80,6 +81,8 @@ Servidor web alternativo a Apache2 construido con Python y asyncio para alta con
 - [x] Soporte proxy reverso (Caddy, Nginx, Cloudflare)
 - [x] Detección de IP real del cliente
 - [x] Geolocalización con IPs reales
+- [x] Modo multi-puerto HTTP (SSL_ENABLED=false)
+- [x] Routing inteligente por (Host, Port)
 - [ ] Rate limiting
 - [ ] Headers de seguridad avanzados
 - [ ] WebSocket support
@@ -162,6 +165,7 @@ python main.py
 #### Archivo .env
 ```env
 # Servidor
+SSL_ENABLED=true                     # true = SSL tradicional, false = Multi-puerto HTTP
 DEFAULT_HTTP_PORT=3080
 DEFAULT_HTTPS_PORT=3453
 MAX_CONCURRENT_CONNECTIONS=300
@@ -338,6 +342,7 @@ tech-web-server/
 - [Configuración inicial](docs/setup.md)
 - [Configuración de virtual hosts](docs/virtual-hosts.md)
 - [**🔐 Certificados SSL/Let's Encrypt**](docs/SSL_CERTIFICATES_GUIDE.md) - Guía completa de SSL
+- [**🌐 Configuración Multi-Puerto**](docs/MULTI_PORT_CONFIGURATION.md) - Modo HTTP de alto rendimiento
 - [**🔄 Soporte Proxy Reverso**](docs/REVERSE_PROXY_SUPPORT.md) - Caddy, Nginx, Cloudflare
 - [Sistema de logging](docs/logging-system.md)
 - [Dashboard de administración](docs/dashboard.md)
