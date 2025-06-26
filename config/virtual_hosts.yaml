@@ -10,9 +10,9 @@ virtual_hosts:
     php_pool: "www"
 
   # Mismo puerto que localhost (compartido)
-  - domain: "test.local"
-    port: 3080
-    document_root: "./public/tech-support"
+  - domain: "localhost"
+    port: 3081
+    document_root: "/home/jose/electrosur.site"
     ssl_enabled: false
     ssl_redirect: false
     php_enabled: true
@@ -30,7 +30,7 @@ virtual_hosts:
     php_pool: "www"
 
   # Puerto específico para API (solo cuando SSL_ENABLED=false)
-  - domain: "api.local"
+  - domain: "localhost"
     port: 3091
     document_root: "./public/intranet"
     ssl_enabled: false
@@ -42,8 +42,8 @@ virtual_hosts:
   - domain: "ogolfen.z-sur.com.ar"
     port: 3080
     document_root: "./public/tech-support"
-    ssl_enabled: true
-    ssl_redirect: true
+    ssl_enabled: false
+    ssl_redirect: false
     php_enabled: true
     php_version: "8.3"
     php_pool: "www"
