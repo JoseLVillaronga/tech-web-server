@@ -80,15 +80,15 @@ class TechWebServer:
             # Buscar virtual host correspondiente
             vhost = None
 
-            # Si SSL está deshabilitado, usar routing por (dominio, puerto)
+            # Si SSL está deshabilitado, usar routing ESTRICTO por (dominio, puerto)
             if not config.get('ssl_enabled', True):
                 # Obtener puerto del servidor desde el request
                 server_port = request.transport.get_extra_info('sockname')[1] if request.transport else None
                 if server_port:
                     vhost = config.get_virtual_host_by_domain_and_port(host, server_port)
-
-            # Fallback al método tradicional (solo por dominio)
-            if not vhost:
+                # NO hacer fallback - routing estricto por (dominio, puerto)
+            else:
+                # Modo SSL: usar routing tradicional por dominio únicamente
                 vhost = config.get_virtual_host_by_domain(host)
 
             if not vhost:

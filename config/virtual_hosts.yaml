@@ -20,7 +20,7 @@ virtual_hosts:
     php_pool: "www"
 
   # Puerto específico para admin (solo cuando SSL_ENABLED=false)
-  - domain: "admin.local"
+  - domain: "localhost"
     port: 3090
     document_root: "./public/intranet2"
     ssl_enabled: false
