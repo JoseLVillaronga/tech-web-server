@@ -35,10 +35,16 @@ class MongoDBClient:
                 print(f"🔌 Conectando a MongoDB: {mongo_host}:{mongo_port}")
                 print(f"📁 Base de datos objetivo: {mongo_db}")
 
-                # Conectar sin especificar base de datos en la URI (más compatible)
-                connection_uri = f"mongodb://{mongo_host}:{mongo_port}/"
+                # Construir URI de conexión con o sin autenticación
+                if mongo_user and mongo_pass:
+                    # Usar base de datos admin para autenticación por defecto
+                    auth_db = config.get('mongo_auth_db', 'admin')
+                    connection_uri = f"mongodb://{mongo_user}:{mongo_pass}@{mongo_host}:{mongo_port}/?authSource={auth_db}"
+                    print(f"🔍 Intentando conexión con autenticación (usuario: {mongo_user}, authSource: {auth_db})...")
+                else:
+                    connection_uri = f"mongodb://{mongo_host}:{mongo_port}/"
+                    print(f"🔍 Intentando conexión sin autenticación...")
 
-                print(f"🔍 Intentando conexión sin autenticación...")
                 self.client = AsyncIOMotorClient(
                     connection_uri,
                     serverSelectionTimeoutMS=5000,  # 5 segundos timeout

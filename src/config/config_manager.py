@@ -24,7 +24,9 @@ class ConfigManager:
             'mongo_user': os.getenv('MONGO_USER'),
             'mongo_pass': os.getenv('MONGO_PASS'),
             'mongo_host': os.getenv('MONGO_HOST', 'localhost'),
+            'mongo_port': int(os.getenv('MONGO_PORT', 27017)),
             'mongo_db': os.getenv('MONGO_DB'),
+            'mongo_auth_db': os.getenv('MONGO_AUTH_DB', 'admin'),
             
             # Servidor
             'dashboard_port': int(os.getenv('PORT', 8000)),
