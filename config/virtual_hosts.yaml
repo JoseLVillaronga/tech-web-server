@@ -10,8 +10,18 @@ virtual_hosts:
     php_pool: "www"
 
   # Mismo puerto que localhost (compartido)
-  - domain: "localhost"
+  - domain: "electrosur.site"
     port: 3081
+    document_root: "/home/jose/electrosur.site"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
+
+  # Mismo puerto que localhost (compartido)
+  - domain: "www.electrosur.site"
+    port: 3082
     document_root: "/home/jose/electrosur.site"
     ssl_enabled: false
     ssl_redirect: false
