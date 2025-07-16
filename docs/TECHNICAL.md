@@ -94,6 +94,37 @@ Tech Web Server está construido con una arquitectura modular que separa las res
 - PHP 8.3 → `/run/php/php8.3-fpm.sock`
 - PHP 8.4 → `/run/php/php8.4-fpm.sock`
 
+**Configuración de Permisos:**
+
+Los sockets PHP-FPM por defecto tienen permisos `660` y pertenecen a `www-data:www-data`. Para que el servidor web pueda acceder a ellos:
+
+```bash
+# Solución permanente (recomendada)
+sudo usermod -a -G www-data $USER
+
+# Verificar que el usuario esté en el grupo
+groups $USER | grep www-data
+
+# Reiniciar sesión o ejecutar:
+newgrp www-data
+```
+
+**Troubleshooting PHP-FPM:**
+
+```bash
+# Verificar servicios PHP-FPM activos
+sudo systemctl status php8.3-fpm
+
+# Verificar sockets existentes
+ls -la /run/php/php*-fpm.sock
+
+# Verificar permisos (deben ser srw-rw----)
+# Si el usuario no está en www-data, aparecerá "Permission denied"
+
+# Solución temporal para desarrollo
+sudo chmod 666 /run/php/php*.sock
+```
+
 ## Configuración de Virtual Hosts
 
 ### Estructura YAML

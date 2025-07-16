@@ -193,7 +193,14 @@ sudo kill -9 <PID>
 # Verificar permisos sockets
 ls -la /run/php/php*-fpm.sock
 
-# Corregir permisos (temporal)
+# Solución permanente (recomendada)
+sudo usermod -a -G www-data $USER
+newgrp www-data  # O reiniciar sesión
+
+# Verificar que el usuario esté en el grupo
+groups $USER | grep www-data
+
+# Alternativa temporal (solo desarrollo)
 sudo chmod 666 /run/php/php*.sock
 
 # Verificar usuario/grupo

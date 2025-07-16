@@ -210,6 +210,30 @@ El servicio lee automáticamente el archivo `.env` del proyecto.
    # Agregar: tu_usuario ALL=(ALL) NOPASSWD: ALL
    ```
 
+### Problemas con PHP-FPM
+
+1. **Error "No hay versiones PHP disponibles":**
+   ```bash
+   # Verificar permisos de sockets
+   ls -la /run/php/php*-fpm.sock
+
+   # Solución permanente
+   sudo usermod -a -G www-data $USER
+   newgrp www-data
+
+   # Reiniciar servicio
+   ./service_manager.sh restart
+   ```
+
+2. **Verificar que PHP funciona:**
+   ```bash
+   # Probar archivo PHP
+   curl -s http://localhost:3080/index.php | head -5
+
+   # Verificar dashboard
+   curl -s http://localhost:8000 | grep "PHP"
+   ```
+
 ### El servicio se reinicia constantemente
 
 1. Ver logs detallados:

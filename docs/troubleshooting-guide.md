@@ -274,6 +274,74 @@ console.timeEnd('Carousel Init');
 
 ---
 
+## ❌ Error 6: PHP no funciona - "No hay versiones PHP disponibles"
+
+### 🔍 **Síntomas:**
+- Dashboard muestra "No hay versiones PHP disponibles"
+- Virtual hosts muestran "PHP Deshabilitado"
+- Archivos PHP se descargan en lugar de ejecutarse
+- Error en logs: "Permission denied" al acceder sockets PHP-FPM
+
+### 🎯 **Causa Principal:**
+**Permisos de sockets PHP-FPM.** Los sockets tienen permisos `660` y pertenecen a `www-data:www-data`, pero el servidor web corre como otro usuario.
+
+### ✅ **Solución Permanente:**
+
+#### 1. Agregar usuario al grupo www-data:
+```bash
+# Agregar usuario actual al grupo www-data
+sudo usermod -a -G www-data $USER
+
+# Verificar que se agregó correctamente
+groups $USER | grep www-data
+```
+
+#### 2. Aplicar cambios:
+```bash
+# Opción A: Reiniciar sesión completa
+logout
+# Luego volver a iniciar sesión
+
+# Opción B: Aplicar grupo sin reiniciar
+newgrp www-data
+```
+
+#### 3. Verificar permisos:
+```bash
+# Los sockets deben ser accesibles ahora
+ls -la /run/php/php*-fpm.sock
+# Salida esperada: srw-rw---- 1 www-data www-data
+
+# Verificar que el usuario puede acceder
+test -w /run/php/php8.3-fpm.sock && echo "✅ Acceso OK" || echo "❌ Sin acceso"
+```
+
+#### 4. Reiniciar servidor web:
+```bash
+sudo service tech-web-server restart
+```
+
+### 🔧 **Solución Temporal (solo desarrollo):**
+```bash
+# Solo para pruebas rápidas
+sudo chmod 666 /run/php/php*.sock
+sudo service tech-web-server restart
+```
+
+### 🔍 **Verificación:**
+```bash
+# 1. Verificar servicios PHP-FPM
+sudo systemctl status php8.3-fpm
+
+# 2. Probar PHP en navegador
+curl -s http://localhost:3080/index.php | head -5
+
+# 3. Verificar dashboard
+# Debería mostrar versiones PHP disponibles
+```
+
+---
+
 ## 📋 Checklist de Troubleshooting
 
 ### ✅ Cuando algo no funciona, verificar en orden:

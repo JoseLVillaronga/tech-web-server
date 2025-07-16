@@ -150,8 +150,15 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. **Configurar permisos PHP-FPM** (temporal para desarrollo)
+4. **Configurar permisos PHP-FPM**
 ```bash
+# Solución permanente (recomendada)
+sudo usermod -a -G www-data $USER
+
+# Luego reiniciar sesión o ejecutar:
+newgrp www-data
+
+# Alternativa temporal (solo para desarrollo)
 sudo chmod 666 /run/php/php*.sock
 ```
 
