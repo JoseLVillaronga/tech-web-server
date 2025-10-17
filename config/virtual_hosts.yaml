@@ -29,6 +29,16 @@ virtual_hosts:
     php_version: "8.3"
     php_pool: "www"
 
+  # Mismo puerto que localhost (compartido)
+  - domain: "electrosur.site"
+    port: 3083
+    document_root: "/home/jose/electrosur.site"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
+
   # Puerto específico para admin (solo cuando SSL_ENABLED=false)
   - domain: "localhost"
     port: 3090
@@ -49,9 +59,36 @@ virtual_hosts:
     php_version: "7.4"
     php_pool: "www"
 
-  - domain: "ogolfen.z-sur.com.ar"
-    port: 3080
-    document_root: "./public/tech-support"
+  - domain: "puntoa.z-sur.com.ar"
+    port: 3083
+    document_root: "./public/puntoa"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
+
+  - domain: "pintorhogares.z-sur.com.ar"
+    port: 3085
+    document_root: "/home/jose/pintorhogares"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
+
+  - domain: "tech-support.com.ar"
+    port: 3086
+    document_root: "/home/jose/tech-support"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
+
+  - domain: "www.tech-support.com.ar"
+    port: 3087
+    document_root: "/home/jose/tech-support"
     ssl_enabled: false
     ssl_redirect: false
     php_enabled: true
