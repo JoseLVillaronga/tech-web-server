@@ -8,6 +8,7 @@ Servidor web alternativo a Apache2 construido con Python y asyncio para alta con
 - **Servidor asyncio** de alta concurrencia (40-300 conexiones simultáneas)
 - **Virtual hosts** con configuración independiente
 - **Soporte PHP-FPM** con múltiples versiones
+- **Rewrite Engine** para aplicaciones MVC (compatible con Apache .htaccess)
 - **Certificados SSL/TLS** (Let's Encrypt)
 - **Modo multi-puerto HTTP** para máximo rendimiento
 - **Soporte proxy reverso** (Caddy, Nginx, Cloudflare)
@@ -74,6 +75,17 @@ Servidor web alternativo a Apache2 construido con Python y asyncio para alta con
 - [x] Renovación automática de certificados
 - [x] Verificación DNS para puertos no estándar
 
+#### 7. Rewrite Engine (URL Rewriting)
+- [x] Motor de rewrite basado en configuración YAML
+- [x] Soporte para patrones regex
+- [x] Condiciones (file_not_exists, dir_not_exists)
+- [x] Flags (QSA - Query String Append, L - Last)
+- [x] Grupos capturados ($1, $2, etc.)
+- [x] Configuración por virtual host
+- [x] Compatible con aplicaciones MVC
+- [x] Manejo de errores 404 personalizados
+- [x] Integración con PHP-FPM
+
 ### 🔄 En Desarrollo
 
 #### 7. Funcionalidades Avanzadas
@@ -96,6 +108,7 @@ El servidor web está **100% operativo** con todas las funcionalidades principal
 - **🚀 Servidor Web**: Asyncio de alta concurrencia (hasta 300 conexiones)
 - **🐘 PHP-FPM**: Soporte completo para múltiples versiones (7.1, 7.4, 8.2, 8.3, 8.4)
 - **🌐 Virtual Hosts**: Configuración independiente por dominio
+- **🔄 Rewrite Engine**: URL rewriting para aplicaciones MVC (compatible con Apache)
 - **🔐 SSL/HTTPS**: Certificados auto-firmados con redirección automática
 - **🔄 Proxy Reverso**: Compatible con Caddy, Nginx, Cloudflare (IPs reales)
 - **📊 Dashboard**: Interfaz web con estadísticas y paginación inteligente
@@ -107,6 +120,7 @@ El servidor web está **100% operativo** con todas las funcionalidades principal
 ### 🌟 **Características Destacadas**
 
 - **SSL/HTTPS Completo**: Certificados auto-firmados con redirección automática
+- **Rewrite Engine**: URL rewriting para aplicaciones MVC (compatible con Apache)
 - **Dashboard Avanzado**: Paginación inteligente con números de página
 - **Logging Inteligente**: Detecta geolocalización (LOCAL/remota) y guarda en MongoDB
 - **Dashboard Remoto**: Accesible desde cualquier IP en puerto 8000
@@ -226,6 +240,16 @@ virtual_hosts:
     php_enabled: true
     php_version: "7.4"
     php_pool: "www"
+
+    # Rewrite rules para aplicaciones MVC
+    rewrite_rules:
+      - pattern: "^(.*)$"
+        target: "/index.php"
+        query_string: "url=$1"
+        conditions:
+          - type: "file_not_exists"
+          - type: "dir_not_exists"
+        flags: ["QSA", "L"]
 ```
 
 ## 🧪 Pruebas
@@ -281,6 +305,25 @@ use tech_web_server
 db.access_logs.find().limit(5).sort({timestamp: -1})
 ```
 
+### Rewrite Engine (URL Rewriting)
+```bash
+# Probar ruta MVC que no existe como archivo
+curl -v http://localhost:3080/usuarios/123
+# Esperado: Se reescribe a /index.php?url=/usuarios/123
+
+# Probar ruta con parámetros
+curl -v "http://localhost:3080/servicios?foo=bar"
+# Esperado: Se reescribe a /index.php?url=/servicios&foo=bar
+
+# Probar ruta 404 personalizada
+curl -v http://localhost:3080/ruta-no-existe
+# Esperado: Se renderiza página 404 personalizada
+
+# Probar que archivos estáticos se sirven normalmente
+curl -I http://localhost:3080/public/style.css
+# Esperado: Status 200 (no se reescribe)
+```
+
 ## 📁 Estructura del Proyecto
 
 ```
@@ -296,6 +339,11 @@ tech-web-server/
 │   │   ├── __init__.py
 │   │   ├── fastcgi_client.py      # Cliente FastCGI
 │   │   └── php_manager.py         # Gestor de PHP-FPM
+│   ├── rewrite/
+│   │   ├── __init__.py
+│   │   ├── conditions.py          # Condiciones de rewrite
+│   │   ├── rewrite_rule.py        # Reglas de rewrite
+│   │   └── rewrite_engine.py      # Motor de rewrite
 │   ├── logging/
 │   │   ├── __init__.py
 │   │   ├── logger.py              # Sistema de logging
@@ -322,6 +370,8 @@ tech-web-server/
 │   └── test/
 │       ├── index.html             # Página test
 │       └── version.php            # phpinfo() test
+├── tests/
+│   └── test_rewrite_engine.py     # Tests del rewrite engine
 ├── .env                           # Variables de entorno
 ├── .gitignore                     # Exclusiones Git
 ├── requirements.txt               # Dependencias Python
@@ -342,12 +392,14 @@ tech-web-server/
 - `20a8ddc` - Soporte SSL/HTTPS completo con certificados
 - `3bbb6bc` - Redirección automática HTTP → HTTPS
 - `dc94aa0` - Paginación inteligente del dashboard
+- **Nuevo** - Rewrite Engine para aplicaciones MVC (URL rewriting compatible con Apache)
 
 ## 📚 Documentación Completa
 
 ### 🔧 Configuración y Administración
 - [Configuración inicial](docs/setup.md)
 - [Configuración de virtual hosts](docs/virtual-hosts.md)
+- [**🔄 Rewrite Engine (URL Rewriting)**](GUIA_PRUEBA_REWRITE.md) - Motor de rewrite para aplicaciones MVC
 - [**🔐 Certificados SSL/Let's Encrypt**](docs/SSL_CERTIFICATES_GUIDE.md) - Guía completa de SSL
 - [**🌐 Configuración Multi-Puerto**](docs/MULTI_PORT_CONFIGURATION.md) - Modo HTTP de alto rendimiento
 - [**🔄 Soporte Proxy Reverso**](docs/REVERSE_PROXY_SUPPORT.md) - Caddy, Nginx, Cloudflare

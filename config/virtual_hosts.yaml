@@ -68,6 +68,17 @@ virtual_hosts:
     php_version: "8.3"
     php_pool: "www"
 
+    # Reglas de rewrite para aplicación MVC
+    rewrite_rules:
+      # Redirigir todas las peticiones a index.php si no son archivos o directorios reales
+      - pattern: "^(.*)$"
+        target: "/index.php"
+        query_string: "url=$1"
+        conditions:
+          - type: "file_not_exists"
+          - type: "dir_not_exists"
+        flags: ["QSA", "L"]
+
   - domain: "pintorhogares.z-sur.com.ar"
     port: 3085
     document_root: "/home/jose/pintorhogares"
@@ -94,3 +105,23 @@ virtual_hosts:
     php_enabled: true
     php_version: "8.3"
     php_pool: "www"
+
+  - domain: "desmalezado.z-sur.com.ar"
+    port: 3088
+    document_root: "./public/desmalezado"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
+
+    # Reglas de rewrite para aplicación MVC
+    rewrite_rules:
+      # Redirigir todas las peticiones a index.php si no son archivos o directorios reales
+      - pattern: "^(.*)$"
+        target: "/index.php"
+        query_string: "url=$1"
+        conditions:
+          - type: "file_not_exists"
+          - type: "dir_not_exists"
+        flags: ["QSA", "L"]

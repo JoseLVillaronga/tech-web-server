@@ -14,6 +14,7 @@ from dashboard.dashboard_server import DashboardServer
 from utils.geoip import geoip_manager
 from database.mongodb_client import mongodb_client
 from tls.ssl_manager import ssl_manager
+from rewrite.rewrite_engine import RewriteEngine
 
 class TechWebServer:
     """Servidor web principal con soporte para virtual hosts"""
@@ -102,9 +103,22 @@ class TechWebServer:
             # Verificar si necesita redirección HTTP → HTTPS
             if self._should_redirect_to_https(request, vhost):
                 return self._create_https_redirect(request, vhost)
-            
-            # Obtener la ruta del archivo
+
+            # Aplicar reglas de rewrite si están configuradas
             path = request.path.lstrip('/')
+            query_string = request.query_string or ''
+
+            if vhost.get('rewrite_rules'):
+                try:
+                    rewrite_engine = RewriteEngine(vhost, vhost['document_root'])
+                    if rewrite_engine.is_enabled():
+                        # Procesar rewrite rules
+                        path, query_string = rewrite_engine.process(request.path, query_string)
+                        # Limpiar la ruta después del rewrite
+                        path = path.lstrip('/')
+                except Exception as e:
+                    print(f"⚠️  Error en rewrite engine para {vhost.get('domain')}: {e}")
+
             if not path:
                 path = ''  # Dejar vacío para que se resuelva como directorio
 
@@ -174,7 +188,8 @@ class TechWebServer:
             if file_path.suffix.lower() == '.php' and vhost.get('php_enabled', False):
                 try:
                     # Ejecutar PHP a través de FastCGI
-                    status, headers, content = await php_manager.execute_php_file(request, vhost, file_path)
+                    # Pasar el query_string modificado por el rewrite engine
+                    status, headers, content = await php_manager.execute_php_file(request, vhost, file_path, query_string)
 
                     # Crear respuesta
                     response = web.Response(

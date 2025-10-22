@@ -160,23 +160,30 @@ class PHPManager:
         
         return params
     
-    async def execute_php_file(self, request, vhost: Dict, file_path: Path) -> Tuple[int, Dict[str, str], bytes]:
-        """Ejecuta un archivo PHP y retorna status, headers y contenido"""
-        
+    async def execute_php_file(self, request, vhost: Dict, file_path: Path, query_string: str = '') -> Tuple[int, Dict[str, str], bytes]:
+        """Ejecuta un archivo PHP y retorna status, headers y contenido
+
+        Args:
+            request: Request HTTP
+            vhost: Configuración del virtual host
+            file_path: Ruta del archivo PHP
+            query_string: Query string (puede venir del rewrite engine)
+        """
+
         php_version = vhost.get('php_version', '8.3')
         client = self.get_client(php_version)
-        
+
         if not client:
             return 500, {'content-type': 'text/plain'}, b'PHP version not available'
-        
+
         if not file_path.exists():
             return 404, {'content-type': 'text/plain'}, b'PHP file not found'
-        
+
         try:
-            # Separar query string (siempre debe estar definido, aunque sea vacío)
-            query_string = ''
-            if '?' in request.path_qs:
-                query_string = request.path_qs.split('?', 1)[1]
+            # Si no se proporciona query_string, extraerlo del request
+            if not query_string:
+                if '?' in request.path_qs:
+                    query_string = request.path_qs.split('?', 1)[1]
             # Asegurar que query_string nunca sea None
             
             # Construir parámetros FastCGI
