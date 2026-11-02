@@ -83,6 +83,7 @@ Thumbs.db
 # Archivos de configuración específicos del entorno
 config/local_*
 config/*.local
+config/virtual_hosts.yaml
 
 # Archivos de backup
 *.bak
