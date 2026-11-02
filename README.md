@@ -164,7 +164,15 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. **Configurar permisos PHP-FPM**
+4. **Crear archivos de configuración locales (Obligatorio)**
+> ⚠️ `config/virtual_hosts.yaml` y `.env` están excluidos de Git (`.gitignore`) para proteger credenciales, dominios y rutas locales del servidor. Deben crearse a partir de sus plantillas antes de iniciar la aplicación:
+
+```bash
+cp .env.example .env
+cp config/virtual_hosts.yaml.example config/virtual_hosts.yaml
+```
+
+5. **Configurar permisos PHP-FPM**
 ```bash
 # Solución permanente (recomendada)
 sudo usermod -a -G www-data $USER
@@ -176,7 +184,7 @@ newgrp www-data
 sudo chmod 666 /run/php/php*.sock
 ```
 
-5. **Ejecutar el servidor**
+6. **Ejecutar el servidor**
 ```bash
 python main.py
 ```
@@ -220,23 +228,46 @@ PHP_FPM_SOCKETS_83=/run/php/php8.3-fpm.sock
 PHP_FPM_SOCKETS_84=/run/php/php8.4-fpm.sock
 ```
 
-#### Virtual Hosts (config/virtual_hosts.yaml)
+#### Virtual Hosts (`config/virtual_hosts.yaml`)
+
+El archivo `config/virtual_hosts.yaml` es **indispensable** para que el servidor inicie y enrute peticiones. Si no existe, créalo copiando la plantilla base:
+
+```bash
+cp config/virtual_hosts.yaml.example config/virtual_hosts.yaml
+```
+
+##### Referencia de Campos por Virtual Host
+
+| Campo | Tipo | Obligatorio | Descripción |
+| :--- | :--- | :---: | :--- |
+| `domain` | `string` | Sí | Nombre de dominio exacto recibido en la cabecera HTTP `Host` (sin puerto). |
+| `port` | `int` | Sí | Puerto HTTP del virtual host. Cuando `SSL_ENABLED=false` (modo multi-puerto detrás de Caddy/Nginx), el servidor abre un listener en cada puerto único y enruta por `(domain, port)`. |
+| `document_root` | `string` | Sí | Ruta (preferentemente relativa al proyecto, ej. `./public/mi-sitio`) donde residen los archivos del sitio. |
+| `ssl_enabled` | `bool` | Sí | `false` cuando el TLS lo termina un proxy reverso externo (Caddy); `true` para usar TLS interno del servidor. |
+| `ssl_redirect` | `bool` | Sí | `true` para forzar redirección `301` de HTTP a HTTPS cuando `ssl_enabled: true`. |
+| `php_enabled` | `bool` | Sí | `true` para procesar scripts `.php` mediante FastCGI (PHP-FPM); `false` para servir solo archivos estáticos. |
+| `php_version` | `string` | Condicional | Versión de PHP-FPM a utilizar (`"7.1"`, `"7.4"`, `"8.2"`, `"8.3"`, `"8.4"`). Requerido si `php_enabled: true`. |
+| `php_pool` | `string` | No | Nombre informativo del pool de PHP-FPM (por defecto `"www"`). |
+| `rewrite_rules` | `list` | No | Lista ordenada de reglas de reescritura de URLs (ver ejemplo debajo). |
+
+##### Ejemplo de `config/virtual_hosts.yaml`
+
 ```yaml
 virtual_hosts:
   - domain: "localhost"
     port: 3080
     document_root: "./public"
-    ssl_enabled: true
-    ssl_redirect: true
+    ssl_enabled: false
+    ssl_redirect: false
     php_enabled: true
     php_version: "8.3"
     php_pool: "www"
 
-  - domain: "test.local"
-    port: 3080
+  - domain: "app.example.com"
+    port: 3083
     document_root: "./public/test"
-    ssl_enabled: true
-    ssl_redirect: true
+    ssl_enabled: false
+    ssl_redirect: false
     php_enabled: true
     php_version: "7.4"
     php_pool: "www"

@@ -88,7 +88,10 @@ class ConfigManager:
                 data = yaml.safe_load(f)
                 return data.get('virtual_hosts', [])
         except FileNotFoundError:
-            print(f"Archivo de virtual hosts no encontrado: {self.virtual_hosts_file}")
+            print(
+                f"❌ [ConfigManager] Archivo de virtual hosts no encontrado: {self.virtual_hosts_file}. "
+                f"Mitigación: ejecute 'cp config/virtual_hosts.yaml.example config/virtual_hosts.yaml'"
+            )
             return []
         except yaml.YAMLError as e:
             print(f"Error al cargar virtual hosts: {e}")

@@ -1,0 +1,57 @@
+# =============================================================================
+# Plantilla de Configuración de Virtual Hosts (Tech Web Server)
+# =============================================================================
+# Instrucciones:
+#   1. Copiar este archivo a config/virtual_hosts.yaml:
+#      cp config/virtual_hosts.yaml.example config/virtual_hosts.yaml
+#   2. Ajustar dominios, puertos y rutas de acuerdo a su entorno.
+#   3. NOTA: config/virtual_hosts.yaml está excluido de Git (.gitignore) por
+#      contener rutas y dominios específicos de despliegue.
+# =============================================================================
+
+virtual_hosts:
+  # 1. Sitio principal con PHP 8.3
+  - domain: "localhost"
+    port: 3080
+    document_root: "./public"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
+
+  # 2. Sitio secundario en puerto dedicado con otra versión de PHP (modo multi-puerto HTTP)
+  - domain: "localhost"
+    port: 3091
+    document_root: "./public/test"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "7.4"
+    php_pool: "www"
+
+  # 3. Aplicación MVC publicada detrás de proxy reverso (ej. Caddy / Nginx)
+  #    Cuando SSL_ENABLED=false en .env, el servidor escucha en cada 'port' único
+  #    y enruta estrictamente por el par (domain, port).
+  - domain: "app.example.com"
+    port: 3083
+    document_root: "./public/app"
+    ssl_enabled: false
+    ssl_redirect: false
+    php_enabled: true
+    php_version: "8.3"
+    php_pool: "www"
+    rewrite_rules:
+      # Regla específica (evaluada antes del front-controller si lleva flag "L")
+      - pattern: "^/sitemap\\.xml$"
+        target: "/sitemap.php"
+        flags: ["L"]
+      # Front-controller MVC: redirige a index.php si la ruta no es un archivo o directorio real
+      - pattern: "^(.*)$"
+        target: "/index.php"
+        query_string: "url=$1"
+        conditions:
+          - type: "file_not_exists"
+          - type: "dir_not_exists"
+        flags: ["QSA", "L"]
+

@@ -84,6 +84,7 @@ Thumbs.db
 config/local_*
 config/*.local
 config/virtual_hosts.yaml
+config/virtual_hosts.back
 
 # Archivos de backup
 *.bak
