@@ -279,9 +279,11 @@ class LetsEncryptManager:
                 self.logger.error(f"❌ Directorio de certificados LE no encontrado: {le_cert_dir}")
                 return False
             
-            # Rutas de destino en el proyecto
-            project_cert_file = SSL_CERTS_DIR / f"{domain}.crt"
-            project_key_file = SSL_CERTS_DIR / f"{domain}.key"
+            # Rutas de destino en el proyecto (compatibles con SSLManager)
+            ssl_private_dir = SSL_CERTS_DIR.parent / "private"
+            ssl_private_dir.mkdir(parents=True, exist_ok=True)
+            project_cert_file = SSL_CERTS_DIR / f"{domain}-cert.pem"
+            project_key_file = ssl_private_dir / f"{domain}-key.pem"
             
             # Copiar certificado
             le_cert_file = le_cert_dir / "fullchain.pem"

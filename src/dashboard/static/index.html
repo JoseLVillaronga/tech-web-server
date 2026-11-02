@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Web Server - Dashboard</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Tech Web Server Dashboard</h1>
+            <div class="status-indicator" id="status">
+                <span class="dot online"></span>
+                <span>Online</span>
+            </div>
+        </header>
+        
+        <div class="grid">
+            <!-- Estadísticas principales -->
+            <div class="card">
+                <h2>📊 Estadísticas</h2>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-value" id="total-requests">0</div>
+                        <div class="stat-label">Total Requests</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="php-requests">0</div>
+                        <div class="stat-label">PHP Requests</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="static-requests">0</div>
+                        <div class="stat-label">Static Requests</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="errors">0</div>
+                        <div class="stat-label">Errors</div>
+                    </div>
+                </div>
+                <div class="uptime">
+                    <strong>Uptime:</strong> <span id="uptime">00:00:00</span>
+                </div>
+            </div>
+            
+            <!-- Virtual Hosts -->
+            <div class="card">
+                <h2>🌐 Virtual Hosts</h2>
+                <div id="virtual-hosts-list">
+                    <div class="loading">Cargando...</div>
+                </div>
+            </div>
+            
+            <!-- Estado PHP -->
+            <div class="card">
+                <h2>🐘 Estado PHP-FPM</h2>
+                <div id="php-status-list">
+                    <div class="loading">Cargando...</div>
+                </div>
+            </div>
+            
+            <!-- Últimas requests -->
+            <div class="card full-width">
+                <h2>📝 Últimas Requests (Tiempo Real)</h2>
+                <div class="requests-table">
+                    <table id="recent-requests">
+                        <thead>
+                            <tr>
+                                <th>Tiempo</th>
+                                <th>Path</th>
+                                <th>Status</th>
+                                <th>Tipo</th>
+                                <th>IP</th>
+                                <th>País</th>
+                                <th>Virtual Host</th>
+                                <th>User Agent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="8" class="loading">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Logs Históricos -->
+            <div class="card full-width">
+                <h2>🗄️ Logs Históricos (MongoDB)</h2>
+
+                <!-- Filtros -->
+                <div class="filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="start-date">Fecha Inicio:</label>
+                            <input type="datetime-local" id="start-date" class="filter-input">
+                        </div>
+                        <div class="filter-group">
+                            <label for="end-date">Fecha Fin:</label>
+                            <input type="datetime-local" id="end-date" class="filter-input">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-ip">IP:</label>
+                            <select id="filter-ip" class="filter-input">
+                                <option value="">Todas las IPs</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-vhost">Virtual Host:</label>
+                            <select id="filter-vhost" class="filter-input">
+                                <option value="">Todos los hosts</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-status">Status Code:</label>
+                            <select id="filter-status" class="filter-input">
+                                <option value="">Todos los códigos</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-method">Método HTTP:</label>
+                            <select id="filter-method" class="filter-input">
+                                <option value="">Todos los métodos</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="search-text">Buscar en Path/User-Agent:</label>
+                            <input type="text" id="search-text" class="filter-input" placeholder="Texto a buscar...">
+                        </div>
+                        <div class="filter-group">
+                            <button id="apply-filters" class="btn-primary">🔍 Aplicar Filtros</button>
+                            <button id="clear-filters" class="btn-secondary">🗑️ Limpiar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div class="historical-results">
+                    <div class="results-info">
+                        <span id="results-count">0 resultados</span>
+                        <div class="pagination-info">
+                            <span id="pagination-info">Página 1 de 1</span>
+                        </div>
+                    </div>
+
+                    <div class="requests-table">
+                        <table id="historical-logs">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>IP</th>
+                                    <th>País</th>
+                                    <th>Método</th>
+                                    <th>Path</th>
+                                    <th>Status</th>
+                                    <th>Virtual Host</th>
+                                    <th>User Agent</th>
+                                    <th>Tiempo Resp.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="9" class="loading">Haga clic en "Aplicar Filtros" para cargar logs históricos</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginación -->
+                    <div class="pagination">
+                        <button id="prev-page" class="btn-secondary" disabled>← Anterior</button>
+                        <span id="page-numbers"></span>
+                        <button id="next-page" class="btn-secondary" disabled>Siguiente →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>
+

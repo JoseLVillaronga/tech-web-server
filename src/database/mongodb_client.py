@@ -1,5 +1,6 @@
 import asyncio
-from datetime import datetime, timedelta
+import re
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 import pymongo
@@ -47,9 +48,9 @@ class MongoDBClient:
 
                 self.client = AsyncIOMotorClient(
                     connection_uri,
-                    serverSelectionTimeoutMS=5000,  # 5 segundos timeout
+                    serverSelectionTimeoutMS=5000,  # 5 segundos timeout de selección
                     connectTimeoutMS=5000,
-                    socketTimeoutMS=5000,
+                    socketTimeoutMS=30000,          # 30 segundos para agregaciones y limpieza
                     maxPoolSize=10
                 )
 
@@ -61,10 +62,12 @@ class MongoDBClient:
                 self.database = self.client[mongo_db]
                 self.logs_collection = self.database.access_logs
                 
-                # Crear índices para optimizar consultas
+                # Crear índices para optimizar consultas y TTL de retención
                 await self._create_indexes()
                 
                 self.connected = True
+                retention_days = config.get('log_retention_days', 90)
+                asyncio.create_task(self.cleanup_old_logs(days=retention_days))
                 print("✅ Conexión a MongoDB establecida correctamente")
                 return True
                 
@@ -79,10 +82,23 @@ class MongoDBClient:
                 return False
     
     async def _create_indexes(self):
-        """Crea índices para optimizar consultas"""
+        """Crea índices para optimizar consultas y expiración automática (TTL)"""
         try:
-            # Índice por timestamp (para consultas por fecha)
-            await self.logs_collection.create_index([("timestamp", pymongo.DESCENDING)])
+            retention_days = config.get('log_retention_days', 90)
+            expire_seconds = retention_days * 86400
+
+            # Verificar si existe un índice timestamp previo sin TTL o con distinto TTL
+            existing_indexes = await self.logs_collection.index_information()
+            if "timestamp_-1" in existing_indexes:
+                current_ttl = existing_indexes["timestamp_-1"].get("expireAfterSeconds")
+                if current_ttl != expire_seconds:
+                    await self.logs_collection.drop_index("timestamp_-1")
+
+            # Índice por timestamp con expiración automática TTL (por defecto 90 días / 3 meses)
+            await self.logs_collection.create_index(
+                [("timestamp", pymongo.DESCENDING)],
+                expireAfterSeconds=expire_seconds
+            )
             
             # Índice por virtual_host (para filtrar por dominio)
             await self.logs_collection.create_index("virtual_host")
@@ -96,7 +112,7 @@ class MongoDBClient:
                 ("timestamp", pymongo.DESCENDING)
             ])
             
-            print("✅ Índices de MongoDB creados correctamente")
+            print(f"✅ Índices de MongoDB creados correctamente (TTL retención: {retention_days} días)")
             
         except Exception as e:
             print(f"⚠️  Error creando índices: {e}")
@@ -109,7 +125,7 @@ class MongoDBClient:
         try:
             # Preparar documento para insertar
             log_document = {
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(timezone.utc).replace(tzinfo=None),
                 "ip": request_data.get('ip', '127.0.0.1'),
                 "country_code": request_data.get('country_code', 'XX'),
                 "country_name": geoip_manager.get_country_name(request_data.get('country_code', 'XX')),
@@ -169,7 +185,7 @@ class MongoDBClient:
         
         try:
             # Fecha límite para estadísticas
-            since = datetime.utcnow() - timedelta(hours=hours)
+            since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=hours)
             
             # Pipeline de agregación para estadísticas
             pipeline = [
@@ -278,12 +294,12 @@ class MongoDBClient:
                 if filters.get('method'):
                     query['method'] = filters['method'].upper()
 
-                # Búsqueda de texto (regex case-insensitive)
+                # Búsqueda de texto (regex case-insensitive escapando metacaracteres)
                 if filters.get('search_text'):
-                    search_text = filters['search_text']
+                    escaped_text = re.escape(str(filters['search_text']))
                     query['$or'] = [
-                        {'path': {'$regex': search_text, '$options': 'i'}},
-                        {'user_agent': {'$regex': search_text, '$options': 'i'}}
+                        {'path': {'$regex': escaped_text, '$options': 'i'}},
+                        {'user_agent': {'$regex': escaped_text, '$options': 'i'}}
                     ]
 
             # Contar total de documentos que coinciden
@@ -360,14 +376,14 @@ class MongoDBClient:
             print(f"❌ Error obteniendo opciones de filtro: {e}")
             return {}
 
-    async def cleanup_old_logs(self, days: int = 30) -> int:
-        """Limpia logs antiguos (opcional)"""
+    async def cleanup_old_logs(self, days: int = 90) -> int:
+        """Limpia logs antiguos que superen los días de retención configurados"""
         if not self.connected or self.logs_collection is None:
             return 0
         
         try:
             # Fecha límite para limpieza
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
             
             # Eliminar logs antiguos
             result = await self.logs_collection.delete_many({

@@ -2,9 +2,12 @@
 # Script para renovación manual de certificados Let's Encrypt
 # Ejecutar cuando el script automático indique que se requiere renovación manual
 
-DOMAIN="ogolfen.z-sur.com.ar"
-EMAIL="jlvillaronga@z-sur.com.ar"
-PROJECT_DIR="/home/jose/tech-web-server"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -f "$PROJECT_DIR/.env" ]; then
+    source "$PROJECT_DIR/.env" 2>/dev/null || true
+fi
+DOMAIN="${CERT_RENEWAL_DOMAIN:-${1:-localhost}}"
+EMAIL="${CERT_RENEWAL_EMAIL:-${2:-admin@localhost}}"
 
 echo "🔐 Iniciando renovación manual de certificado para $DOMAIN"
 echo "📧 Email: $EMAIL"

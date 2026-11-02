@@ -118,6 +118,7 @@ class FastCGIClient:
                 fcgi_params[key] = value
         
         req_id = 1
+        writer = None
         
         try:
             # Conectar al socket Unix
@@ -130,41 +131,50 @@ class FastCGIClient:
             begin_request = struct.pack('!HB5x', self.FCGI_RESPONDER, 0)
             writer.write(self._pack_fcgi_record(self.FCGI_BEGIN_REQUEST, req_id, begin_request))
             
-            # 2. Enviar PARAMS
+            # 2. Enviar PARAMS en bloques de max 65535 bytes
             params_data = self._pack_params(fcgi_params)
             if params_data:
-                writer.write(self._pack_fcgi_record(self.FCGI_PARAMS, req_id, params_data))
+                chunk_size = 65535
+                for i in range(0, len(params_data), chunk_size):
+                    chunk = params_data[i:i + chunk_size]
+                    writer.write(self._pack_fcgi_record(self.FCGI_PARAMS, req_id, chunk))
             
             # Enviar PARAMS vacío para indicar fin de parámetros
             writer.write(self._pack_fcgi_record(self.FCGI_PARAMS, req_id, b''))
             
-            # 3. Enviar STDIN (datos POST)
+            # 3. Enviar STDIN (datos POST) en bloques de max 65535 bytes para evitar desbordamiento del campo H (ushort)
             if post_data:
-                writer.write(self._pack_fcgi_record(self.FCGI_STDIN, req_id, post_data))
+                chunk_size = 65535
+                for i in range(0, len(post_data), chunk_size):
+                    chunk = post_data[i:i + chunk_size]
+                    writer.write(self._pack_fcgi_record(self.FCGI_STDIN, req_id, chunk))
             
             # Enviar STDIN vacío para indicar fin de datos
             writer.write(self._pack_fcgi_record(self.FCGI_STDIN, req_id, b''))
             
             await writer.drain()
             
-            # Leer respuesta
+            # Leer respuesta garantizando lecturas exactas de trama
             stdout_data = b''
             stderr_data = b''
             
             while True:
-                header = await asyncio.wait_for(reader.read(8), timeout=self.timeout)
-                if len(header) < 8:
-                    break
+                try:
+                    header = await asyncio.wait_for(reader.readexactly(8), timeout=self.timeout)
+                except asyncio.IncompleteReadError as e:
+                    if not e.partial:
+                        break
+                    raise RuntimeError("Trama FastCGI truncada en cabecera")
                 
                 version, req_type, response_req_id, content_length, padding_length = struct.unpack('!BBHHBx', header)
                 
                 if content_length > 0:
-                    content = await asyncio.wait_for(reader.read(content_length), timeout=self.timeout)
+                    content = await asyncio.wait_for(reader.readexactly(content_length), timeout=self.timeout)
                 else:
                     content = b''
                 
                 if padding_length > 0:
-                    await asyncio.wait_for(reader.read(padding_length), timeout=self.timeout)
+                    await asyncio.wait_for(reader.readexactly(padding_length), timeout=self.timeout)
                 
                 if req_type == self.FCGI_STDOUT:
                     if content:
@@ -175,15 +185,19 @@ class FastCGIClient:
                 elif req_type == self.FCGI_END_REQUEST:
                     break
             
-            writer.close()
-            await writer.wait_closed()
-            
             return stdout_data, stderr_data
             
         except asyncio.TimeoutError:
             raise TimeoutError(f"Timeout al comunicarse con PHP-FPM: {self.socket_path}")
         except Exception as e:
             raise RuntimeError(f"Error al ejecutar PHP: {e}")
+        finally:
+            if writer is not None:
+                writer.close()
+                try:
+                    await writer.wait_closed()
+                except Exception:
+                    pass
     
     async def test_connection(self) -> bool:
         """Prueba la conexión con PHP-FPM"""

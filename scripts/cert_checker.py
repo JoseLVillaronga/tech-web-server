@@ -65,9 +65,10 @@ class CertificateChecker:
     def get_certificate_info(self, cert: x509.Certificate) -> Dict:
         """Extrae información del certificado"""
         try:
-            # Obtener fechas
-            not_before = cert.not_valid_before
-            not_after = cert.not_valid_after
+            # Obtener fechas (compatible con cryptography >= 42.0 y versiones anteriores)
+            not_before = getattr(cert, 'not_valid_before_utc', None) or cert.not_valid_before
+            not_after = getattr(cert, 'not_valid_after_utc', None) or cert.not_valid_after
+            now_ref = datetime.now(not_after.tzinfo)
             
             # Obtener subject y SAN
             subject = cert.subject.rfc4514_string()
@@ -81,7 +82,7 @@ class CertificateChecker:
                 pass
             
             # Calcular días hasta expiración
-            days_until_expiry = (not_after - datetime.now()).days
+            days_until_expiry = (not_after - now_ref).days
             
             return {
                 'subject': subject,
@@ -89,7 +90,7 @@ class CertificateChecker:
                 'not_before': not_before,
                 'not_after': not_after,
                 'days_until_expiry': days_until_expiry,
-                'is_expired': datetime.now() > not_after,
+                'is_expired': now_ref > not_after,
                 'needs_renewal': days_until_expiry <= self.renewal_days
             }
             

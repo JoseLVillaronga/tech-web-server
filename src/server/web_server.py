@@ -12,6 +12,7 @@ from config.config_manager import config
 from php_fpm.php_manager import php_manager
 from dashboard.dashboard_server import DashboardServer
 from utils.geoip import geoip_manager
+from utils.network import get_real_client_ip, is_valid_ip
 from database.mongodb_client import mongodb_client
 from tls.ssl_manager import ssl_manager
 from rewrite.rewrite_engine import RewriteEngine
@@ -31,44 +32,11 @@ class TechWebServer:
 
     def _get_real_client_ip(self, request: web_request.Request) -> str:
         """Obtiene la IP real del cliente considerando headers de proxy"""
-        # Verificar si está habilitado el soporte de proxy
-        if not config.get('proxy_support_enabled', True):
-            return request.remote or '127.0.0.1'
-
-        # Lista de headers de proxy en orden de prioridad
-        proxy_headers = [
-            'X-Forwarded-For',
-            'X-Real-IP',
-            'X-Client-IP',
-            'CF-Connecting-IP',  # Cloudflare
-            'True-Client-IP',    # Akamai
-        ]
-
-        # Buscar IP en headers de proxy
-        for header in proxy_headers:
-            if header in request.headers:
-                ip_value = request.headers[header].strip()
-                if ip_value:
-                    # X-Forwarded-For puede contener múltiples IPs separadas por comas
-                    # La primera es la IP original del cliente
-                    if ',' in ip_value:
-                        ip_value = ip_value.split(',')[0].strip()
-
-                    # Validar que sea una IP válida
-                    if self._is_valid_ip(ip_value):
-                        return ip_value
-
-        # Si no se encuentra en headers de proxy, usar la IP directa
-        return request.remote or '127.0.0.1'
+        return get_real_client_ip(request, config.get('proxy_support_enabled', True))
 
     def _is_valid_ip(self, ip: str) -> bool:
         """Valida si una cadena es una dirección IP válida"""
-        try:
-            import ipaddress
-            ipaddress.ip_address(ip)
-            return True
-        except ValueError:
-            return False
+        return is_valid_ip(ip)
     
     async def handle_request(self, request: web_request.Request) -> web.Response:
         """Maneja todas las peticiones HTTP"""
@@ -110,8 +78,8 @@ class TechWebServer:
 
             if vhost.get('rewrite_rules'):
                 try:
-                    rewrite_engine = RewriteEngine(vhost, vhost['document_root'])
-                    if rewrite_engine.is_enabled():
+                    rewrite_engine = config.get_rewrite_engine(vhost)
+                    if rewrite_engine and rewrite_engine.is_enabled():
                         # Procesar rewrite rules
                         path, query_string = rewrite_engine.process(request.path, query_string)
                         # Limpiar la ruta después del rewrite
@@ -144,7 +112,7 @@ class TechWebServer:
                 file_path = file_path.resolve()
                 document_root = document_root.resolve()
 
-                if not str(file_path).startswith(str(document_root)):
+                if not file_path.is_relative_to(document_root):
                     return web.Response(text="Forbidden", status=403)
 
                 if not file_path.exists():
@@ -222,22 +190,9 @@ class TechWebServer:
                     return web.Response(text="PHP execution error", status=500)
 
             else:
-                # Servir archivo estático
-                # Determinar tipo MIME
-                content_type, _ = mimetypes.guess_type(str(file_path))
-                if content_type is None:
-                    content_type = 'application/octet-stream'
-
-                # Leer y servir el archivo
+                # Servir archivo estático mediante streaming (FileResponse)
                 try:
-                    async with aio_open(file_path, 'rb') as f:
-                        content = await f.read()
-
-                    # Crear respuesta
-                    response = web.Response(
-                        body=content,
-                        content_type=content_type
-                    )
+                    response = web.FileResponse(file_path)
 
                     # Agregar headers de seguridad básicos
                     if not config.get('hide_server_header', True):
@@ -426,15 +381,16 @@ class TechWebServer:
         else:
             print("⚠️  No hay versiones de PHP disponibles")
 
-        # Verificar certificados SSL disponibles
-        ssl_certificates = ssl_manager.list_available_certificates()
-        if ssl_certificates:
-            print(f"🔐 Certificados SSL disponibles:")
-            for domain, cert_info in ssl_certificates.items():
-                status = "✅" if cert_info['available'] else "❌"
-                print(f"   {status} {domain}")
-        else:
-            print("⚠️  No hay certificados SSL disponibles")
+        # Verificar certificados SSL disponibles solo cuando SSL está habilitado
+        if ssl_enabled:
+            ssl_certificates = ssl_manager.list_available_certificates()
+            if ssl_certificates:
+                print(f"🔐 Certificados SSL disponibles:")
+                for domain, cert_info in ssl_certificates.items():
+                    status = "✅" if cert_info['available'] else "❌"
+                    print(f"   {status} {domain}")
+            else:
+                print("⚠️  No hay certificados SSL disponibles")
 
         print(f"🌐 Virtual hosts configurados:")
         for vhost in config.get_virtual_hosts():
@@ -485,18 +441,19 @@ class TechWebServer:
             print("ℹ️  Servidor HTTPS deshabilitado (SSL_ENABLED=false)")
 
         if ssl_enabled_hosts:
-            # Buscar certificado principal (preferir dominios públicos)
-            ssl_context = None
-            cert_used = None
+            # Intentar crear contexto SNI multi-dominio primero
+            ssl_context = ssl_manager.create_sni_context(ssl_enabled_hosts)
+            cert_used = "SNI multi-dominio" if ssl_context else None
 
             # Prioridad 1: Dominios públicos (no .local, no localhost)
-            for vhost in ssl_enabled_hosts:
-                domain = vhost['domain']
-                if not domain.endswith('.local') and domain != 'localhost':
-                    if ssl_manager.is_ssl_available(domain):
-                        ssl_context = ssl_manager.get_ssl_context(domain)
-                        cert_used = domain
-                        break
+            if not ssl_context:
+                for vhost in ssl_enabled_hosts:
+                    domain = vhost['domain']
+                    if not domain.endswith('.local') and domain != 'localhost':
+                        if ssl_manager.is_ssl_available(domain):
+                            ssl_context = ssl_manager.get_ssl_context(domain)
+                            cert_used = domain
+                            break
 
             # Prioridad 2: Certificado wildcard para .local
             if not ssl_context and ssl_manager.is_ssl_available('wildcard-local'):

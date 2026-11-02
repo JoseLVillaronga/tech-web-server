@@ -147,7 +147,7 @@ CRON_FILE="$CRON_DIR/letsencrypt.cron"
 TEMP_CRON="/tmp/letsencrypt_temp.cron"
 
 # Reemplazar rutas en archivo cron
-sed "s|/home/sloch/tech_web_server|$PROJECT_DIR|g" "$CRON_FILE" > "$TEMP_CRON"
+sed "s|__PROJECT_DIR__|$PROJECT_DIR|g" "$CRON_FILE" > "$TEMP_CRON"
 sed -i "s|--dns-provider cloudflare|--dns-provider $DNS_PROVIDER|g" "$TEMP_CRON"
 
 # Instalar cron

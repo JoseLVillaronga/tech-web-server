@@ -22,7 +22,10 @@ class SSLManager:
         Args:
             ssl_base_path: Ruta base donde están los certificados SSL
         """
-        self.ssl_base_path = Path(ssl_base_path)
+        base_path = Path(ssl_base_path)
+        if not base_path.is_absolute():
+            base_path = Path(__file__).resolve().parent.parent.parent / base_path
+        self.ssl_base_path = base_path
         self.certs_path = self.ssl_base_path / "certs"
         self.private_path = self.ssl_base_path / "private"
         self.ssl_contexts: Dict[str, ssl.SSLContext] = {}
@@ -47,12 +50,16 @@ class SSLManager:
         Returns:
             Tupla (cert_file, key_file) o None si no se encuentra
         """
-        cert_file = self.certs_path / f"{domain}-cert.pem"
-        key_file = self.private_path / f"{domain}-key.pem"
-        
-        if cert_file.exists() and key_file.exists():
-            logger.info(f"✅ Certificado encontrado para {domain}")
-            return str(cert_file), str(key_file)
+        candidates = [
+            (self.certs_path / f"{domain}-cert.pem", self.private_path / f"{domain}-key.pem"),
+            (self.certs_path / f"{domain}.crt", self.private_path / f"{domain}.key"),
+            (self.certs_path / f"{domain}.crt", self.certs_path / f"{domain}.key"),
+        ]
+
+        for cert_file, key_file in candidates:
+            if cert_file.exists() and key_file.exists():
+                logger.info(f"✅ Certificado encontrado para {domain}")
+                return str(cert_file), str(key_file)
         
         # Intentar con certificado wildcard
         wildcard_cert = self.certs_path / "wildcard-local-cert.pem"
@@ -300,13 +307,14 @@ class SSLManager:
                 # Buscar contexto específico para el dominio
                 if domain in domain_contexts:
                     logger.info(f"✅ Contexto SNI encontrado para: {domain}")
-                    # Retornar el contexto específico
-                    return domain_contexts[domain]
+                    ssl_socket.context = domain_contexts[domain]
+                    return None
 
                 # Buscar certificado wildcard para dominios .local
                 if domain.endswith('.local') and 'wildcard-local' in domain_contexts:
                     logger.info(f"✅ Contexto wildcard usado para: {domain}")
-                    return domain_contexts['wildcard-local']
+                    ssl_socket.context = domain_contexts['wildcard-local']
+                    return None
 
                 logger.warning(f"⚠️ No se encontró contexto específico para: {domain}, usando principal")
 

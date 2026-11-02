@@ -51,7 +51,7 @@ class FileNotExistsCondition(Condition):
             document_root_resolved = Path(document_root).resolve()
             
             # Verificar que está dentro del document_root
-            if not str(file_path).startswith(str(document_root_resolved)):
+            if not file_path.is_relative_to(document_root_resolved):
                 return True  # Si está fuera, consideramos que "no existe"
             
             # Retornar True si NO es un archivo
@@ -86,7 +86,7 @@ class DirNotExistsCondition(Condition):
             document_root_resolved = Path(document_root).resolve()
             
             # Verificar que está dentro del document_root
-            if not str(dir_path).startswith(str(document_root_resolved)):
+            if not dir_path.is_relative_to(document_root_resolved):
                 return True  # Si está fuera, consideramos que "no existe"
             
             # Retornar True si NO es un directorio

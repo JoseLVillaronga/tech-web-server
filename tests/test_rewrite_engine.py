@@ -58,6 +58,24 @@ class TestRewriteConditions(unittest.TestCase):
         result = condition.evaluate('/public', self.document_root)
         self.assertFalse(result)
 
+    def test_sibling_prefix_traversal_blocked(self):
+        """Verifica que un directorio hermano con el mismo prefijo no se considere dentro de document_root"""
+        import shutil
+        sibling_dir = Path(f"{self.temp_dir}_secret")
+        sibling_dir.mkdir(exist_ok=True)
+        secret_file = sibling_dir / "secret.txt"
+        secret_file.touch()
+        try:
+            file_cond = FileNotExistsCondition()
+            dir_cond = DirNotExistsCondition()
+            traversal_path = f"/../{sibling_dir.name}/secret.txt"
+            traversal_dir = f"/../{sibling_dir.name}"
+            # Al estar fuera del document_root, debe evaluarse como que "no existe" dentro del docroot
+            self.assertTrue(file_cond.evaluate(traversal_path, self.document_root))
+            self.assertTrue(dir_cond.evaluate(traversal_dir, self.document_root))
+        finally:
+            shutil.rmtree(sibling_dir, ignore_errors=True)
+
 
 class TestRewriteRule(unittest.TestCase):
     """Tests para las reglas de rewrite"""
@@ -222,6 +240,28 @@ class TestRewriteEngine(unittest.TestCase):
         path, query = engine.process('/api/users')
         self.assertEqual(path, '/api/index.php')
         self.assertEqual(query, 'endpoint=users')
+
+    def test_config_manager_caches_rewrite_engine(self):
+        """Verifica que ConfigManager reutilice la misma instancia de RewriteEngine por virtual host"""
+        from config.config_manager import ConfigManager
+        cfg = ConfigManager()
+        vhost = {
+            'domain': 'cache-test.local',
+            'port': 3080,
+            'document_root': self.document_root,
+            'rewrite_rules': [
+                {
+                    'pattern': '^(.*)$',
+                    'target': '/index.php',
+                    'query_string': 'url=$1',
+                    'flags': ['QSA', 'L']
+                }
+            ]
+        }
+        engine1 = cfg.get_rewrite_engine(vhost)
+        engine2 = cfg.get_rewrite_engine(vhost)
+        self.assertIsNotNone(engine1)
+        self.assertIs(engine1, engine2)
 
 
 if __name__ == '__main__':

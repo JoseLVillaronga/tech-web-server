@@ -12,10 +12,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import shutil
 
-# Configuración
-DOMAIN = "ogolfen.z-sur.com.ar"
-EMAIL = "jlvillaronga@z-sur.com.ar"
-PROJECT_DIR = Path(__file__).parent.parent
+# Configuración (parametrizada mediante variables de entorno, sin valores sensibles hardcodeados)
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+DOMAIN = os.getenv("CERT_RENEWAL_DOMAIN", "localhost")
+EMAIL = os.getenv("CERT_RENEWAL_EMAIL", "admin@localhost")
 SSL_CERTS_DIR = PROJECT_DIR / "ssl" / "certs"
 SSL_PRIVATE_DIR = PROJECT_DIR / "ssl" / "private"
 LOG_FILE = PROJECT_DIR / "logs" / "cert_renewal.log"
@@ -130,11 +130,10 @@ def copy_letsencrypt_certificates(domain: str) -> bool:
         os.chmod(project_cert_file, 0o644)
         os.chmod(project_key_file, 0o600)
         
-        # Cambiar propietario
-        import pwd
-        user_info = pwd.getpwnam('jose')
-        os.chown(project_cert_file, user_info.pw_uid, user_info.pw_gid)
-        os.chown(project_key_file, user_info.pw_uid, user_info.pw_gid)
+        # Cambiar propietario al dueño del directorio del proyecto de forma agnóstica al host
+        project_stat = PROJECT_DIR.stat()
+        os.chown(project_cert_file, project_stat.st_uid, project_stat.st_gid)
+        os.chown(project_key_file, project_stat.st_uid, project_stat.st_gid)
         
         logger.info(f"✅ Certificados copiados para {domain}")
         return True
@@ -220,7 +219,7 @@ def main():
         # Si llegamos aquí, necesitamos renovación manual
         logger.warning("⚠️  Se requiere renovación MANUAL del certificado")
         logger.info("📋 Pasos para renovar manualmente:")
-        logger.info("1. Ejecutar: sudo certbot certonly --manual --preferred-challenges dns -d ogolfen.z-sur.com.ar --agree-tos --email jlvillaronga@z-sur.com.ar --no-eff-email")
+        logger.info(f"1. Ejecutar: sudo certbot certonly --manual --preferred-challenges dns -d {DOMAIN} --agree-tos --email {EMAIL} --no-eff-email")
         logger.info("2. Agregar el registro TXT DNS solicitado")
         logger.info("3. Ejecutar este script nuevamente para copiar los certificados")
         

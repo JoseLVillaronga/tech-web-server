@@ -5,6 +5,7 @@ from urllib.parse import parse_qs
 
 from .fastcgi_client import FastCGIClient
 from config.config_manager import config
+from utils.network import get_real_client_ip, is_valid_ip
 
 class PHPManager:
     """Gestor de PHP-FPM para diferentes versiones"""
@@ -66,44 +67,11 @@ class PHPManager:
     
     def _get_real_client_ip(self, request) -> str:
         """Obtiene la IP real del cliente considerando headers de proxy"""
-        # Verificar si está habilitado el soporte de proxy
-        if not config.get('proxy_support_enabled', True):
-            return request.remote or '127.0.0.1'
-
-        # Lista de headers de proxy en orden de prioridad
-        proxy_headers = [
-            'X-Forwarded-For',
-            'X-Real-IP',
-            'X-Client-IP',
-            'CF-Connecting-IP',  # Cloudflare
-            'True-Client-IP',    # Akamai
-        ]
-
-        # Buscar IP en headers de proxy
-        for header in proxy_headers:
-            if header in request.headers:
-                ip_value = request.headers[header].strip()
-                if ip_value:
-                    # X-Forwarded-For puede contener múltiples IPs separadas por comas
-                    # La primera es la IP original del cliente
-                    if ',' in ip_value:
-                        ip_value = ip_value.split(',')[0].strip()
-
-                    # Validar que sea una IP válida
-                    if self._is_valid_ip(ip_value):
-                        return ip_value
-
-        # Si no se encuentra en headers de proxy, usar la IP directa
-        return request.remote or '127.0.0.1'
+        return get_real_client_ip(request, config.get('proxy_support_enabled', True))
 
     def _is_valid_ip(self, ip: str) -> bool:
         """Valida si una cadena es una dirección IP válida"""
-        try:
-            import ipaddress
-            ipaddress.ip_address(ip)
-            return True
-        except ValueError:
-            return False
+        return is_valid_ip(ip)
 
     def _build_fcgi_params(self, request, vhost: Dict, script_path: str,
                           query_string: str = '') -> Dict[str, str]:
@@ -116,20 +84,22 @@ class PHPManager:
             cgi_name = f"HTTP_{header_name.upper().replace('-', '_')}"
             params[cgi_name] = header_value
         
-        # Calcular SCRIPT_NAME basado en REQUEST_URI y document_root
-        request_path = request.path.lstrip('/')
-        if not request_path:
-            # Si es la raíz, usar el archivo index que se detectó
-            script_name = '/index.php'  # Por defecto, se ajustará si es .html
-            script_file = Path(script_path)
-            if script_file.name.startswith('index.'):
-                script_name = f'/{script_file.name}'
-        else:
-            # Para otros archivos, usar la ruta relativa al document_root
-            script_name = f'/{request_path}'
+        # Calcular SCRIPT_NAME basado en el archivo PHP resuelto respecto a document_root
+        doc_root_resolved = Path(vhost['document_root']).resolve()
+        script_file_resolved = Path(script_path).resolve()
+        try:
+            rel_script = script_file_resolved.relative_to(doc_root_resolved)
+            script_name = f"/{rel_script.as_posix()}"
+        except ValueError:
+            request_path = request.path.lstrip('/')
+            script_name = f"/{request_path}" if request_path else '/index.php'
 
-        # Detectar si es HTTPS basado en el esquema del request
-        is_https = request.scheme == 'https'
+        # Detectar si es HTTPS basado en el esquema del request o cabecera de proxy reverso (ej. Caddy)
+        forwarded_proto = request.headers.get('X-Forwarded-Proto', '').split(',')[0].strip().lower()
+        is_https = (
+            request.scheme == 'https' or
+            (config.get('proxy_support_enabled', True) and forwarded_proto == 'https')
+        )
 
         # Parámetros básicos
         params.update({

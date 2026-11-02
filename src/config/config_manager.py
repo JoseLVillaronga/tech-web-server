@@ -1,20 +1,33 @@
 import os
+from pathlib import Path
 import yaml
 from dotenv import load_dotenv
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
+from rewrite.rewrite_engine import RewriteEngine
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 class ConfigManager:
     """Maneja la configuración del servidor web desde .env y virtual_hosts.yaml"""
     
     def __init__(self, env_file: str = ".env", virtual_hosts_file: Optional[str] = None):
+        env_path = Path(env_file)
+        if not env_path.is_absolute():
+            env_path = PROJECT_ROOT / env_path
+
         # Cargar variables de entorno
-        load_dotenv(env_file)
+        load_dotenv(env_path)
         
         # Archivo de virtual hosts
-        self.virtual_hosts_file = virtual_hosts_file or os.getenv('VIRTUAL_HOSTS_CONFIG', 'config/virtual_hosts.yaml')
+        raw_vhosts_file = virtual_hosts_file or os.getenv('VIRTUAL_HOSTS_CONFIG', 'config/virtual_hosts.yaml')
+        vhosts_path = Path(raw_vhosts_file)
+        if not vhosts_path.is_absolute():
+            vhosts_path = PROJECT_ROOT / vhosts_path
+        self.virtual_hosts_file = str(vhosts_path)
         
         # Configuración cargada
         self._config = self._load_config()
+        self._rewrite_engines: Dict[Tuple[Optional[str], Optional[int]], RewriteEngine] = {}
         self._virtual_hosts = self._load_virtual_hosts()
     
     def _load_config(self) -> Dict[str, Any]:
@@ -30,16 +43,19 @@ class ConfigManager:
             
             # Servidor
             'dashboard_port': int(os.getenv('PORT', 8000)),
+            'dashboard_bind_ip': os.getenv('DASHBOARD_BIND_IP', '0.0.0.0'),
             'max_concurrent_connections': int(os.getenv('MAX_CONCURRENT_CONNECTIONS', 300)),
             'compression_enabled': os.getenv('COMPRESSION_ENABLED', 'true').lower() == 'true',
             'ssl_enabled': os.getenv('SSL_ENABLED', 'true').lower() == 'true',
             'default_http_port': int(os.getenv('DEFAULT_HTTP_PORT', 3080)),
             'default_https_port': int(os.getenv('DEFAULT_HTTPS_PORT', 3453)),
+            'proxy_support_enabled': os.getenv('PROXY_SUPPORT_ENABLED', 'true').lower() == 'true',
             
             # Logging
             'logs_enabled': os.getenv('LOGS', 'true').lower() == 'true',
             'log_file_path': os.getenv('LOG_FILE_PATH', '/var/log/webserver/access.log'),
             'log_level': os.getenv('LOG_LEVEL', 'INFO'),
+            'log_retention_days': int(os.getenv('LOG_RETENTION_DAYS', 90)),
             
             # GeoIP
             'geoip_database_path': os.getenv('GEOIP_DATABASE_PATH', '/var/lib/geoip/GeoLite2-Country.mmdb'),
@@ -114,9 +130,20 @@ class ConfigManager:
 
         return sorted(list(ports))
     
+    def get_rewrite_engine(self, vhost: Dict[str, Any]) -> Optional[RewriteEngine]:
+        """Obtiene (y cachea) la instancia de RewriteEngine para un virtual host."""
+        if not vhost or not vhost.get('rewrite_rules'):
+            return None
+
+        key = (vhost.get('domain'), vhost.get('port'))
+        if key not in self._rewrite_engines:
+            self._rewrite_engines[key] = RewriteEngine(vhost, vhost['document_root'])
+        return self._rewrite_engines[key]
+
     def reload(self):
         """Recarga la configuración"""
         self._config = self._load_config()
+        self._rewrite_engines.clear()
         self._virtual_hosts = self._load_virtual_hosts()
         print("Configuración recargada")
 
